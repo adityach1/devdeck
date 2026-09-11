@@ -1,0 +1,2756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#0e0f12" />
+<link rel="manifest" href="manifest.webmanifest" />
+<title>Start</title>
+<style>
+  /* ============================================================
+     DESIGN TOKENS
+     ============================================================ */
+  :root {
+    /* surfaces */
+    --bg: #0b0c0f;
+    --bg-elev: #111319;
+    --panel: #14161c;
+    --panel-hi: #1a1d24;
+    --panel-2: #1f222a;
+    --border: #262932;
+    --border-hi: #333844;
+
+    /* text */
+    --fg: #eef0f4;
+    --fg-2: #b8bcc8;
+    --muted: #7a8093;
+    --dim: #565c6c;
+
+    /* accents */
+    --accent: #7aa8ff;
+    --accent-fg: #0b1220;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --purple: #c084fc;
+
+    /* misc */
+    --radius-sm: 6px;
+    --radius: 10px;
+    --radius-lg: 14px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.35);
+    --shadow: 0 8px 28px -8px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.25);
+    --shadow-lg: 0 24px 60px -12px rgba(0,0,0,.65), 0 4px 12px rgba(0,0,0,.3);
+
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+
+    --ease: cubic-bezier(.4, 0, .2, 1);
+    --ease-out: cubic-bezier(.16, 1, .3, 1);
+  }
+  :root[data-theme="light"] {
+    --bg: #f7f8fa;
+    --bg-elev: #ffffff;
+    --panel: #ffffff;
+    --panel-hi: #fbfcfd;
+    --panel-2: #f1f3f6;
+    --border: #e5e8ee;
+    --border-hi: #d5d9e2;
+    --fg: #0f1116;
+    --fg-2: #383d4a;
+    --muted: #6a7183;
+    --dim: #949aab;
+    --shadow: 0 8px 28px -8px rgba(15,17,22,.12), 0 2px 6px rgba(15,17,22,.06);
+    --shadow-lg: 0 24px 60px -12px rgba(15,17,22,.18), 0 4px 12px rgba(15,17,22,.08);
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f7f8fa; --bg-elev: #ffffff; --panel: #ffffff; --panel-hi: #fbfcfd;
+      --panel-2: #f1f3f6; --border: #e5e8ee; --border-hi: #d5d9e2;
+      --fg: #0f1116; --fg-2: #383d4a; --muted: #6a7183; --dim: #949aab;
+      --shadow: 0 8px 28px -8px rgba(15,17,22,.12), 0 2px 6px rgba(15,17,22,.06);
+      --shadow-lg: 0 24px 60px -12px rgba(15,17,22,.18), 0 4px 12px rgba(15,17,22,.08);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font: 14px/1.55 var(--sans);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  button, input, textarea, select { font: inherit; color: inherit; }
+  ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; border: 2px solid var(--bg); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-hi); }
+
+  /* ============================================================
+     LAYOUT
+     ============================================================ */
+  .wrap {
+    max-width: 1240px; margin: 0 auto;
+    padding: 28px 24px 80px;
+  }
+  header.top {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; margin-bottom: 22px; flex-wrap: wrap;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .brand-mark {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, var(--purple)));
+    display: grid; place-items: center;
+    color: var(--accent-fg); font-size: 15px; font-weight: 700;
+    box-shadow: 0 4px 14px -4px color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+  .brand-text {
+    font-size: 12px; font-weight: 600; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--fg-2);
+  }
+  .hstack { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+  /* ============================================================
+     BUTTONS
+     ============================================================ */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--fg-2);
+    padding: 7px 12px; border-radius: var(--radius-sm);
+    cursor: pointer; font-size: 12.5px; font-weight: 500;
+    transition: all .15s var(--ease);
+    white-space: nowrap;
+  }
+  .btn:hover {
+    color: var(--fg); border-color: var(--border-hi);
+    background: var(--panel-hi);
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn.active, .btn[aria-pressed="true"] {
+    color: var(--fg); border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, var(--panel));
+  }
+  .btn.ghost {
+    background: transparent; border-color: transparent;
+  }
+  .btn.ghost:hover { background: var(--panel-2); border-color: var(--border); }
+  .btn.primary {
+    background: var(--accent); color: var(--accent-fg);
+    border-color: var(--accent);
+  }
+  .btn.primary:hover { background: color-mix(in srgb, var(--accent) 85%, white); }
+  .btn kbd {
+    font-family: var(--mono); font-size: 10px; color: var(--dim);
+    background: var(--bg-elev); padding: 1px 5px; border-radius: 4px;
+    border: 1px solid var(--border); margin-left: 2px;
+  }
+  .btn.active kbd { color: var(--fg-2); }
+
+  .icon-btn {
+    background: transparent; border: 1px solid transparent;
+    color: var(--muted); padding: 6px 9px; border-radius: var(--radius-sm);
+    cursor: pointer; font-size: 14px; line-height: 1;
+    transition: all .15s var(--ease);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .icon-btn:hover { color: var(--fg); background: var(--panel-2); }
+
+  /* ============================================================
+     BADGES
+     ============================================================ */
+  .badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--red); color: #fff;
+    font-size: 10px; font-weight: 600;
+    min-width: 16px; height: 16px; padding: 0 5px;
+    border-radius: 999px; margin-left: 6px;
+  }
+
+  /* ============================================================
+     OMNIBAR
+     ============================================================ */
+  .omni {
+    position: relative; margin-bottom: 26px;
+    border-radius: var(--radius-lg);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    transition: all .2s var(--ease);
+    box-shadow: var(--shadow-sm);
+  }
+  .omni:focus-within {
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--accent) 15%, transparent),
+      var(--shadow);
+  }
+  .omni-inner {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 18px;
+  }
+  .omni-icon {
+    color: var(--muted); flex-shrink: 0; display: grid; place-items: center;
+  }
+  .omni-icon svg { width: 18px; height: 18px; }
+  .omni input {
+    flex: 1; background: transparent; border: none;
+    font-size: 15px; outline: none; font-family: inherit;
+    color: var(--fg); min-width: 0;
+  }
+  .omni input::placeholder { color: var(--dim); }
+  .omni-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--mono); font-size: 10.5px; color: var(--muted);
+    background: var(--panel-2); padding: 3px 8px; border-radius: 999px;
+    border: 1px solid var(--border);
+  }
+  .omni-pill kbd {
+    font-family: var(--mono); font-size: 10px; color: var(--fg-2);
+  }
+
+  .hint {
+    font-size: 11.5px; color: var(--muted);
+    margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap;
+    padding-left: 4px;
+  }
+  .hint-label {
+    font-family: var(--mono); font-size: 10px; color: var(--dim);
+    text-transform: uppercase; letter-spacing: .08em;
+    align-self: center; margin-right: 4px;
+  }
+  .hint span.chip {
+    font-family: var(--mono); font-size: 11px;
+    background: var(--panel); color: var(--fg-2);
+    padding: 2px 8px; border-radius: 999px;
+    border: 1px solid var(--border); cursor: pointer;
+    transition: all .12s var(--ease);
+  }
+  .hint span.chip:hover {
+    color: var(--fg); border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--panel));
+  }
+
+  /* ============================================================
+     GRID + CARDS
+     ============================================================ */
+  .grid { display: grid; gap: 16px; }
+  .grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 820px) { .grid.cols-2 { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    display: flex; flex-direction: column;
+    box-shadow: var(--shadow-sm);
+    transition: border-color .2s var(--ease);
+  }
+  .card:hover { border-color: var(--border-hi); }
+  .card h2 {
+    font-size: 11.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .1em;
+    color: var(--muted); margin: 0 0 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 8px;
+  }
+  .card h2 .title {
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .card h2 .title svg { width: 13px; height: 13px; opacity: .7; }
+  .card h2 .actions { display: flex; gap: 4px; }
+
+  /* ============================================================
+     PORTS
+     ============================================================ */
+  .profile-row {
+    display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;
+  }
+  .profile-chip {
+    font-size: 11.5px; padding: 4px 11px; border-radius: 999px;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); cursor: pointer; font-weight: 500;
+    transition: all .15s var(--ease);
+  }
+  .profile-chip:hover { color: var(--fg-2); border-color: var(--border-hi); }
+  .profile-chip.active {
+    color: var(--fg);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+
+  .ports { display: flex; flex-wrap: wrap; gap: 8px; }
+  .port {
+    display: flex; align-items: center; gap: 9px;
+    background: var(--panel-hi);
+    border: 1px solid var(--border);
+    padding: 8px 12px 8px 10px;
+    border-radius: var(--radius);
+    text-decoration: none; color: var(--fg);
+    font-family: var(--mono); font-size: 12.5px;
+    transition: all .15s var(--ease);
+    position: relative;
+  }
+  .port:hover {
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+    background: color-mix(in srgb, var(--accent) 6%, var(--panel-hi));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -4px rgba(0,0,0,.3);
+  }
+  .port:active { transform: translateY(0); }
+  .port .label {
+    color: var(--muted); font-family: var(--sans); font-size: 11.5px;
+  }
+  .port .spark {
+    width: 34px; height: 11px; opacity: .5;
+    transition: opacity .15s var(--ease);
+  }
+  .port:hover .spark { opacity: .85; }
+
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--dim); flex-shrink: 0;
+    position: relative;
+    transition: background .2s var(--ease);
+  }
+  .dot.up {
+    background: var(--green);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 20%, transparent);
+  }
+  .dot.down { background: var(--red); }
+  .dot.checking {
+    background: var(--yellow);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .35; }
+  }
+
+  /* ============================================================
+     INFRA LINKS
+     ============================================================ */
+  .infra { display: flex; flex-direction: column; gap: 6px; }
+  .infra a {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 12px; border-radius: var(--radius);
+    background: var(--panel-hi);
+    color: var(--fg); text-decoration: none; font-size: 13px;
+    border: 1px solid transparent;
+    transition: all .15s var(--ease);
+    gap: 10px;
+  }
+  .infra a:hover {
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+    background: color-mix(in srgb, var(--accent) 6%, var(--panel-hi));
+  }
+  .infra a .arrow {
+    color: var(--dim); transition: all .15s var(--ease);
+    font-family: var(--mono); font-size: 11px;
+  }
+  .infra a:hover .arrow {
+    color: var(--accent); transform: translate(2px, -2px);
+  }
+
+  /* ============================================================
+     TOOLS
+     ============================================================ */
+  .tools { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tool-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--panel-hi);
+    border: 1px solid var(--border);
+    color: var(--fg-2);
+    padding: 8px 12px; border-radius: var(--radius);
+    cursor: pointer; font-size: 12.5px; font-weight: 500;
+    transition: all .15s var(--ease);
+  }
+  .tool-btn:hover {
+    color: var(--fg);
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+    background: color-mix(in srgb, var(--accent) 6%, var(--panel-hi));
+    transform: translateY(-1px);
+  }
+  .tool-btn:active { transform: translateY(0); }
+  .tool-btn .ico { font-size: 13px; }
+  .tool-btn kbd {
+    font-family: var(--mono); font-size: 10px; color: var(--dim);
+    background: var(--bg-elev); padding: 1px 5px; border-radius: 4px;
+    border: 1px solid var(--border); margin-left: 2px;
+  }
+
+  /* ============================================================
+     SNIPPETS
+     ============================================================ */
+  .snip-filter {
+    width: 100%; background: var(--panel-hi);
+    border: 1px solid var(--border);
+    color: var(--fg); border-radius: var(--radius);
+    padding: 8px 12px; font-size: 12.5px;
+    outline: none; margin-bottom: 10px;
+    transition: all .15s var(--ease);
+  }
+  .snip-filter:focus {
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .snip-filter::placeholder { color: var(--dim); }
+
+  .tag-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+  .tag {
+    font-size: 11px; padding: 3px 9px; border-radius: 999px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted); cursor: pointer;
+    font-family: var(--mono);
+    transition: all .15s var(--ease);
+  }
+  .tag:hover { color: var(--fg-2); border-color: var(--border-hi); }
+  .tag.active {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+
+  .snip-list {
+    display: flex; flex-direction: column; gap: 4px;
+    max-height: 280px; overflow: auto;
+    margin: -4px; padding: 4px;
+  }
+  .snip {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 10px;
+    background: var(--panel-hi);
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    padding: 8px 11px; cursor: pointer;
+    font-size: 12.5px; font-family: var(--mono);
+    transition: all .12s var(--ease);
+  }
+  .snip:hover {
+    border-color: var(--border-hi);
+    background: var(--panel-2);
+  }
+  .snip.active {
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+    background: color-mix(in srgb, var(--accent) 6%, var(--panel-hi));
+  }
+  .snip .lbl {
+    color: var(--muted); font-family: var(--sans);
+    font-size: 11.5px; font-weight: 500; margin-right: 8px;
+  }
+  .snip .cmd {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    flex: 1; color: var(--fg-2);
+  }
+  .snip .cp {
+    font-size: 10px; color: var(--dim); flex-shrink: 0;
+    font-family: var(--mono);
+    opacity: 0;
+    transition: opacity .15s var(--ease);
+  }
+  .snip:hover .cp { opacity: 1; }
+  .snip.copied { border-color: var(--green); background: color-mix(in srgb, var(--green) 8%, var(--panel-hi)); }
+  .snip.copied .cp { opacity: 1; color: var(--green); }
+  .snip-tags { display: flex; gap: 3px; flex-shrink: 0; }
+  .snip-tags .tag {
+    font-size: 9.5px; padding: 1px 6px; cursor: default;
+    opacity: .7;
+  }
+
+  /* ============================================================
+     SCRATCHPAD
+     ============================================================ */
+  .pad-tabs {
+    display: flex; gap: 3px; margin-bottom: 10px;
+    flex-wrap: wrap; align-items: center;
+  }
+  .pad-tab {
+    padding: 5px 11px; border-radius: var(--radius-sm);
+    font-size: 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--muted); cursor: pointer;
+    font-family: var(--mono);
+    display: flex; align-items: center; gap: 8px;
+    transition: all .15s var(--ease);
+  }
+  .pad-tab:hover { background: var(--panel-2); color: var(--fg-2); }
+  .pad-tab.active {
+    color: var(--fg);
+    background: var(--panel-hi);
+    border-color: var(--border);
+  }
+  .pad-tab .x {
+    opacity: 0; transition: opacity .15s var(--ease);
+    font-size: 13px; line-height: 1;
+  }
+  .pad-tab:hover .x { opacity: .5; }
+  .pad-tab .x:hover { opacity: 1; color: var(--red); }
+  .pad-tab.add { color: var(--dim); padding: 5px 10px; }
+
+  .pad-wrap { position: relative; }
+  .pad-area, .pad-hl {
+    width: 100%; min-height: 200px; max-height: 340px;
+    background: var(--panel-hi);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-family: var(--mono); font-size: 13px;
+    color: var(--fg);
+    line-height: 1.6;
+    white-space: pre-wrap; word-wrap: break-word;
+    overflow: auto;
+    transition: border-color .15s var(--ease), box-shadow .15s var(--ease);
+  }
+  .pad-area {
+    position: relative; z-index: 2;
+    resize: vertical; outline: none;
+    background: transparent; border-color: transparent;
+    caret-color: var(--fg);
+  }
+  .pad-wrap:focus-within .pad-area {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  }
+  .pad-wrap:focus-within {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+    border-radius: var(--radius);
+  }
+  .pad-hl {
+    position: absolute; inset: 0; z-index: 1;
+    pointer-events: none; color: transparent;
+  }
+  .pad-hl .k { color: #c792ea; }
+  .pad-hl .s { color: #c3e88d; }
+  .pad-hl .n { color: #f78c6c; }
+  .pad-hl .b { color: #ffcb6b; }
+  .pad-hl .p { color: var(--dim); }
+  :root[data-theme="light"] .pad-hl .k { color: #8b3fc7; }
+  :root[data-theme="light"] .pad-hl .s { color: #4d7c0f; }
+  :root[data-theme="light"] .pad-hl .n { color: #c2410c; }
+  :root[data-theme="light"] .pad-hl .b { color: #a16207; }
+
+  .pad-meta {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--dim);
+    font-family: var(--mono); margin-top: 8px;
+    padding: 0 2px;
+  }
+  .pad-meta .saved { transition: color .2s var(--ease); }
+  .pad-meta .saved.flash { color: var(--green); }
+
+  /* ============================================================
+     MODALS
+     ============================================================ */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: color-mix(in srgb, var(--bg) 70%, transparent);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100; padding: 24px;
+    animation: fadeIn .15s var(--ease-out);
+  }
+  .modal-backdrop.open { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(8px) scale(.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    width: 100%; max-width: 720px;
+    max-height: 90vh; display: flex; flex-direction: column;
+    box-shadow: var(--shadow-lg);
+    animation: slideUp .2s var(--ease-out);
+    overflow: hidden;
+  }
+  .modal.wide { max-width: 1100px; }
+  .modal header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    margin: 0; background: var(--panel);
+    flex-shrink: 0;
+  }
+  .modal header h3 {
+    margin: 0; font-size: 14px; font-weight: 600;
+    color: var(--fg);
+  }
+  .modal header button.close {
+    background: transparent; border: none;
+    color: var(--muted); cursor: pointer;
+    font-size: 20px; line-height: 1; padding: 4px 6px;
+    border-radius: var(--radius-sm);
+    transition: all .15s var(--ease);
+  }
+  .modal header button.close:hover {
+    color: var(--fg); background: var(--panel-2);
+  }
+  .modal .body {
+    padding: 20px;
+    overflow: auto; flex: 1;
+  }
+  .modal textarea, .modal input[type=text],
+  .modal input[type=password], .modal select {
+    width: 100%;
+    background: var(--panel-hi);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    font-family: var(--mono); font-size: 13px;
+    resize: vertical; outline: none;
+    transition: all .15s var(--ease);
+  }
+  .modal textarea:focus, .modal input:focus, .modal select:focus {
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .modal .row {
+    display: flex; gap: 8px; margin-top: 12px;
+    align-items: center; flex-wrap: wrap;
+  }
+  .modal .row button {
+    background: var(--accent); color: var(--accent-fg);
+    border: none; padding: 9px 16px;
+    border-radius: var(--radius); cursor: pointer;
+    font-size: 13px; font-weight: 500;
+    transition: all .15s var(--ease);
+  }
+  .modal .row button:hover { background: color-mix(in srgb, var(--accent) 85%, white); }
+  .modal .row button.ghost {
+    background: transparent; color: var(--fg-2);
+    border: 1px solid var(--border);
+  }
+  .modal .row button.ghost:hover {
+    background: var(--panel-2); color: var(--fg);
+    border-color: var(--border-hi);
+  }
+  .modal .out {
+    margin-top: 14px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-family: var(--mono); font-size: 12.5px;
+    white-space: pre-wrap; word-break: break-all;
+    max-height: 320px; overflow: auto;
+    line-height: 1.55;
+  }
+  .modal .out.err { color: var(--red); }
+  .modal .field { margin-bottom: 14px; }
+  .modal label {
+    display: block; font-size: 11.5px; font-weight: 500;
+    color: var(--muted); margin-bottom: 6px;
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+  .modal p.hint-text {
+    color: var(--muted); font-size: 13px;
+    margin: 0 0 16px; line-height: 1.5;
+  }
+  .modal code {
+    background: var(--panel-2); padding: 1px 6px;
+    border-radius: 4px; font-family: var(--mono); font-size: 12px;
+    color: var(--fg-2);
+  }
+  .tabs {
+    display: flex; gap: 4px; margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tabs .tb {
+    padding: 9px 14px; background: transparent; border: none;
+    color: var(--muted); cursor: pointer;
+    font-size: 13px; font-weight: 500;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all .15s var(--ease);
+  }
+  .tabs .tb:hover { color: var(--fg-2); }
+  .tabs .tb.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* ============================================================
+     API TESTER
+     ============================================================ */
+  .api-req { display: flex; gap: 8px; margin-bottom: 12px; }
+  .api-req select {
+    width: 110px; font-weight: 600; letter-spacing: .05em;
+  }
+  .api-req input { flex: 1; }
+  .api-headers {
+    display: flex; flex-direction: column; gap: 6px;
+    margin-bottom: 8px;
+  }
+  .api-headers .hrow { display: flex; gap: 6px; }
+  .api-headers .hrow input { flex: 1; }
+  .api-headers .hrow button {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); border-radius: var(--radius-sm);
+    padding: 0 10px; cursor: pointer;
+    transition: all .15s var(--ease);
+  }
+  .api-headers .hrow button:hover {
+    color: var(--red); border-color: var(--red);
+  }
+  .api-resp {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-family: var(--mono); font-size: 12px;
+    max-height: 340px; overflow: auto;
+    white-space: pre-wrap; word-break: break-all;
+    line-height: 1.55;
+  }
+  .api-meta {
+    display: flex; gap: 16px; font-size: 12px;
+    color: var(--muted); margin: 10px 0;
+    font-family: var(--mono);
+  }
+  .api-meta .ok { color: var(--green); font-weight: 600; }
+  .api-meta .err { color: var(--red); font-weight: 600; }
+  .api-saved {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 12px;
+  }
+  .api-saved .chip {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--panel-hi);
+    border: 1px solid var(--border);
+    padding: 5px 10px; border-radius: 999px;
+    font-size: 12px; cursor: pointer;
+    font-family: var(--mono);
+    transition: all .15s var(--ease);
+  }
+  .api-saved .chip:hover {
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+    background: color-mix(in srgb, var(--accent) 6%, var(--panel-hi));
+  }
+  .api-saved .chip .x {
+    color: var(--dim); transition: color .12s var(--ease);
+  }
+  .api-saved .chip .x:hover { color: var(--red); }
+
+  /* ============================================================
+     DIFF
+     ============================================================ */
+  .diff-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    margin-bottom: 12px;
+  }
+  .diff-out {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    font-family: var(--mono); font-size: 12px;
+    max-height: 420px; overflow: auto;
+    white-space: pre; line-height: 1.55;
+  }
+  .diff-out .add {
+    background: color-mix(in srgb, var(--green) 14%, transparent);
+    color: var(--green);
+    display: block;
+  }
+  .diff-out .del {
+    background: color-mix(in srgb, var(--red) 14%, transparent);
+    color: var(--red);
+    display: block;
+  }
+  .diff-out .ctx {
+    color: var(--muted);
+    display: block;
+  }
+
+  /* ============================================================
+     PLUGINS
+     ============================================================ */
+  .plugin-widget {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-sm);
+  }
+  .plugin-widget h2 {
+    font-size: 11.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .1em;
+    color: var(--muted); margin: 0 0 14px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .plugin-widget h2 .badge-plugin {
+    font-family: var(--mono); font-size: 9.5px;
+    color: var(--dim); text-transform: none; letter-spacing: 0;
+    background: var(--panel-2); padding: 2px 7px;
+    border-radius: 999px; border: 1px solid var(--border);
+  }
+  .plugin-widget .body { font-size: 13px; color: var(--fg-2); }
+  .plugin-widget .body a {
+    color: var(--accent); text-decoration: none;
+    transition: color .15s var(--ease);
+  }
+  .plugin-widget .body a:hover { text-decoration: underline; }
+
+  /* ============================================================
+     COMMAND PALETTE
+     ============================================================ */
+  .palette-backdrop {
+    position: fixed; inset: 0;
+    background: color-mix(in srgb, var(--bg) 65%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: none; align-items: flex-start; justify-content: center;
+    z-index: 200; padding: 100px 24px 24px;
+    animation: fadeIn .12s var(--ease-out);
+  }
+  .palette-backdrop.open { display: flex; }
+  .palette {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    width: 100%; max-width: 600px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    animation: slideUp .18s var(--ease-out);
+  }
+  .palette-input-wrap {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .palette-input-wrap svg {
+    width: 18px; height: 18px;
+    color: var(--muted); flex-shrink: 0;
+  }
+  .palette input {
+    width: 100%; background: transparent; border: none;
+    font-size: 15px; color: var(--fg);
+    outline: none; font-family: inherit;
+    padding: 0;
+  }
+  .palette input::placeholder { color: var(--dim); }
+  .palette-list {
+    max-height: 400px; overflow: auto; padding: 8px;
+  }
+  .palette-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 12px; border-radius: var(--radius);
+    cursor: pointer; font-size: 13.5px; gap: 12px;
+    transition: background .1s var(--ease);
+  }
+  .palette-item.active {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .palette-item .label {
+    display: flex; align-items: center; gap: 10px;
+    min-width: 0; flex: 1;
+  }
+  .palette-item .cat-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--muted); flex-shrink: 0;
+  }
+  .palette-item[data-cat="tool"]       .cat-dot { background: var(--accent); }
+  .palette-item[data-cat="scratchpad"] .cat-dot { background: var(--purple); }
+  .palette-item[data-cat="snippet"]    .cat-dot { background: var(--green); }
+  .palette-item[data-cat="search"]     .cat-dot { background: var(--yellow); }
+  .palette-item[data-cat="port"]       .cat-dot { background: var(--green); }
+  .palette-item[data-cat="infra"]      .cat-dot { background: var(--yellow); }
+  .palette-item[data-cat="profile"]    .cat-dot { background: var(--purple); }
+  .palette-item[data-cat="api"]        .cat-dot { background: var(--accent); }
+  .palette-item .cat-label {
+    font-size: 10px; color: var(--dim);
+    text-transform: uppercase; letter-spacing: .06em;
+    margin-left: auto; flex-shrink: 0;
+  }
+  .palette-item .k {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    flex-shrink: 0;
+    background: var(--panel-2); padding: 2px 7px;
+    border-radius: 5px; border: 1px solid var(--border);
+  }
+  .palette-empty {
+    padding: 32px 20px; text-align: center;
+    color: var(--dim); font-size: 13px;
+  }
+
+  /* ============================================================
+     TOAST
+     ============================================================ */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translate(-50%, 20px);
+    background: var(--panel);
+    border: 1px solid var(--border-hi);
+    color: var(--fg);
+    padding: 11px 16px; border-radius: var(--radius);
+    font-size: 13px; z-index: 300;
+    opacity: 0; pointer-events: none;
+    transition: all .22s var(--ease-out);
+    display: flex; gap: 14px; align-items: center;
+    max-width: calc(100vw - 48px);
+    box-shadow: var(--shadow-lg);
+  }
+  .toast.show {
+    opacity: 1; pointer-events: auto;
+    transform: translate(-50%, 0);
+  }
+  .toast button {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--fg-2);
+    padding: 4px 11px; border-radius: var(--radius-sm);
+    cursor: pointer; font-size: 12px; font-weight: 500;
+    transition: all .15s var(--ease);
+  }
+  .toast button:hover {
+    color: var(--fg);
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+
+  /* ============================================================
+     FOOTER
+     ============================================================ */
+  footer {
+    margin-top: 36px; padding-top: 24px;
+    border-top: 1px solid var(--border);
+    text-align: center; font-size: 11.5px;
+    color: var(--dim); font-family: var(--mono);
+    display: flex; justify-content: center; gap: 4px;
+    align-items: center; flex-wrap: wrap;
+  }
+  footer a {
+    color: var(--muted); cursor: pointer;
+    text-decoration: none;
+    padding: 2px 6px; border-radius: 4px;
+    transition: all .15s var(--ease);
+  }
+  footer a:hover {
+    color: var(--fg); background: var(--panel-2);
+  }
+  footer .sep { opacity: .4; }
+  footer .nudge {
+    display: inline-flex; align-items: center;
+    color: var(--yellow);
+  }
+  footer .nudge a { color: var(--yellow); }
+  footer .nudge a:hover { background: color-mix(in srgb, var(--yellow) 15%, transparent); }
+
+  /* ============================================================
+     EMPTY STATES
+     ============================================================ */
+  .empty {
+    text-align: center; padding: 28px 16px;
+    color: var(--dim); font-size: 12.5px;
+    font-style: italic;
+  }
+
+  /* ============================================================
+     MOBILE TWEAKS
+     ============================================================ */
+  @media (max-width: 640px) {
+    .wrap { padding: 18px 14px 60px; }
+    header.top { gap: 10px; }
+    .brand-text { display: none; }
+    .omni-inner { padding: 12px 14px; }
+    .card { padding: 14px 15px; }
+    .modal { max-height: 94vh; border-radius: var(--radius); }
+    .modal-backdrop { padding: 12px; }
+    .palette-backdrop { padding: 60px 12px 12px; }
+  }
+
+  /* ============================================================
+     ANIMATIONS (respect reduced motion)
+     ============================================================ */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      transition-duration: .01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ HEADER ============ -->
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">◆</div>
+      <div class="brand-text">Startpage<span id="vaultBadge" class="badge" style="display:none">🔒</span></div>
+    </div>
+    <div class="hstack">
+      <div id="profileSwitch" class="hstack" style="gap:4px"></div>
+      <div id="engineSwitch" class="hstack" style="gap:4px"></div>
+      <button class="icon-btn" id="btnPalette" title="Command palette (⌘P)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px">
+          <path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/>
+        </svg>
+      </button>
+      <button class="icon-btn" id="btnTheme" title="Toggle theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px">
+          <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+        </svg>
+      </button>
+      <div class="clock" id="clock"></div>
+    </div>
+  </header>
+
+  <!-- ============ OMNIBAR ============ -->
+  <div class="omni">
+    <div class="omni-inner">
+      <div class="omni-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+      </div>
+      <input id="omni" type="text" placeholder="Search, or type a bang…  (gh user/repo, mdn flex)" autocomplete="off" spellcheck="false" />
+      <span class="omni-pill"><kbd>⌘K</kbd></span>
+    </div>
+  </div>
+  <div class="hint" id="bangHint"></div>
+
+  <!-- ============ ROW 1 ============ -->
+  <div class="grid cols-2" style="margin-top:22px;margin-bottom:16px">
+    <div class="card" data-widget="ports">
+      <h2>
+        <span class="title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+          </svg>
+          Local Ports
+        </span>
+        <span class="actions">
+          <button class="btn ghost" id="scanPorts">scan</button>
+          <button class="btn ghost" id="editPorts">edit</button>
+        </span>
+      </h2>
+      <div class="profile-row" id="portProfiles"></div>
+      <div class="ports" id="ports"></div>
+    </div>
+
+    <div class="card" data-widget="tools">
+      <h2>
+        <span class="title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+          </svg>
+          Quick Tools
+        </span>
+      </h2>
+      <div class="tools">
+        <button class="tool-btn" data-tool="json"><span class="ico">{" "}</span>JSON<kbd>⌘J</kbd></button>
+        <button class="tool-btn" data-tool="b64"><span class="ico">64</span>Base64<kbd>⌘B</kbd></button>
+        <button class="tool-btn" data-tool="jwt"><span class="ico">🔑</span>JWT<kbd>⌘U</kbd></button>
+        <button class="tool-btn" data-tool="ts"><span class="ico">⏱</span>Timestamp<kbd>⌘T</kbd></button>
+        <button class="tool-btn" data-tool="regex"><span class="ico">.*</span>Regex<kbd>⌘R</kbd></button>
+        <button class="tool-btn" data-tool="uuid"><span class="ico">#</span>UUID</button>
+        <button class="tool-btn" data-tool="hash"><span class="ico">#</span>Hash</button>
+        <button class="tool-btn" data-tool="url"><span class="ico">%</span>URL</button>
+        <button class="tool-btn" data-tool="color"><span class="ico">●</span>Color</button>
+        <button class="tool-btn" data-tool="api"><span class="ico">↗</span>API</button>
+        <button class="tool-btn" data-tool="more"><span class="ico">⋯</span>More</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCRATCHPAD ============ -->
+  <div class="card" data-widget="scratch" style="margin-bottom:16px">
+    <h2>
+      <span class="title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+        </svg>
+        Scratchpad
+      </span>
+      <span class="actions">
+        <button class="btn ghost" id="padDiff">diff</button>
+        <button class="btn ghost" id="padSnapshot">snapshot</button>
+        <button class="btn ghost" id="padExport">export</button>
+        <button class="btn ghost" id="padImport">import</button>
+        <button class="btn ghost" id="padAdd">+ buffer</button>
+      </span>
+    </h2>
+    <div class="pad-tabs" id="padTabs"></div>
+    <div class="pad-wrap">
+      <pre class="pad-hl" id="padHl" aria-hidden="true"></pre>
+      <textarea class="pad-area" id="padArea" spellcheck="false"></textarea>
+    </div>
+    <div class="pad-meta">
+      <span id="padInfo"></span>
+      <span class="saved" id="padSaved">saved</span>
+    </div>
+  </div>
+
+  <!-- plugins -->
+  <div id="pluginHost" style="display:grid;gap:16px;margin-bottom:16px"></div>
+
+  <!-- ============ ROW 2 ============ -->
+  <div class="grid cols-2">
+    <div class="card" data-widget="infra">
+      <h2>
+        <span class="title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+          Infrastructure
+        </span>
+        <span class="actions"><button class="btn ghost" id="editInfra">edit</button></span>
+      </h2>
+      <div class="infra" id="infra"></div>
+    </div>
+
+    <div class="card" data-widget="snippets">
+      <h2>
+        <span class="title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m18 16 4-4-4-4M6 8l-4 4 4 4M14.5 4l-5 16"/>
+          </svg>
+          Snippets
+        </span>
+        <span class="actions"><button class="btn ghost" id="editSnippets">edit</button></span>
+      </h2>
+      <input class="snip-filter" id="snipFilter" placeholder="fuzzy search…  (↑↓ Enter to copy)" autocomplete="off" spellcheck="false" />
+      <div class="tag-row" id="snipTags"></div>
+      <div class="snip-list" id="snippets"></div>
+    </div>
+  </div>
+
+  <!-- ============ FOOTER ============ -->
+  <footer>
+    <span id="bangCount"></span>
+    <span class="sep">·</span>
+    <a id="btnExportAll">export</a>
+    <a id="btnImportAll">import</a>
+    <a id="btnVault">vault</a>
+    <a id="btnPlugins">plugins</a>
+    <a id="btnReset">reset</a>
+    <span class="nudge" id="backupNudge" style="display:none">
+      <span class="sep">·</span>
+      <a id="btnBackupNow">⚠ backup now</a>
+    </span>
+  </footer>
+</div>
+
+<!-- ============ MODAL ============ -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal" id="modalBox">
+    <header>
+      <h3 id="modalTitle">Tool</h3>
+      <button class="close" id="modalClose" aria-label="Close">✕</button>
+    </header>
+    <div class="body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ============ PALETTE ============ -->
+<div class="palette-backdrop" id="paletteBackdrop">
+  <div class="palette">
+    <div class="palette-input-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+      </svg>
+      <input id="paletteInput" placeholder="Type a command…" autocomplete="off" spellcheck="false" />
+    </div>
+    <div class="palette-list" id="paletteList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <span id="toastMsg"></span>
+  <button id="toastAction" style="display:none"></button>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const DEFAULTS = {
+  ports: [
+    { port: 3000, label: "app",      path: "/",           profile: "frontend" },
+    { port: 5173, label: "vite",     path: "/",           profile: "frontend" },
+    { port: 8080, label: "api",      path: "/health",     profile: "backend" },
+    { port: 5432, label: "postgres", path: null,          profile: "backend" },
+    { port: 9090, label: "prom",     path: "/-/healthy",  profile: "backend" }
+  ],
+  infra: [
+    { label: "Portainer",  url: "http://localhost:9000", profile: "homelab" },
+    { label: "Grafana",    url: "http://localhost:3001", profile: "homelab" },
+    { label: "Docker",     url: "http://localhost:9000/#!/containers", profile: "homelab" },
+    { label: "Lens / k8s", url: "http://localhost:8001", profile: "work" },
+    { label: "Proxmox",    url: "https://proxmox.local:8006", profile: "homelab" }
+  ],
+  snippets: [
+    { id: "s1", label: "docker prune", cmd: "docker system prune -af --volumes", tags: ["docker"], uses: 0, lastUsed: 0 },
+    { id: "s2", label: "git undo",     cmd: "git reset --soft HEAD~1",           tags: ["git"],    uses: 0, lastUsed: 0 },
+    { id: "s3", label: "port find",    cmd: "lsof -i :3000",                     tags: ["debug"],  uses: 0, lastUsed: 0 },
+    { id: "s4", label: "ssh tunnel",   cmd: "ssh -L {{local}}:localhost:{{remote}} {{user}}@{{host}}", tags: ["ssh"], uses: 0, lastUsed: 0 },
+    { id: "s5", label: "k8s pods",     cmd: "kubectl get pods -A -o wide",       tags: ["k8s"],    uses: 0, lastUsed: 0 },
+    { id: "s6", label: "pg dump",      cmd: "pg_dump -U {{user}} -d {{db}} > {{file}}.sql", tags: ["db"], uses: 0, lastUsed: 0 },
+    { id: "s7", label: "deploy chain", cmd: "", tags: ["k8s","docker"], chain: [
+      { cmd: "docker build -t {{image}} .", tags: ["docker"] },
+      { cmd: "docker push {{image}}", tags: ["docker"] },
+      { cmd: "kubectl rollout restart deploy/{{deploy}}", tags: ["k8s"] }
+    ], uses: 0, lastUsed: 0 }
+  ],
+  bangs: {
+    gh:      { name: "GitHub",        url: "https://github.com/{q}" },
+    mdn:     { name: "MDN",           url: "https://developer.mozilla.org/en-US/search?q={q}" },
+    caniuse: { name: "CanIUse",       url: "https://caniuse.com/?search={q}" },
+    npm:     { name: "npm",           url: "https://www.npmjs.com/package/{q}" },
+    so:      { name: "StackOverflow", url: "https://stackoverflow.com/search?q={q}" },
+    pypi:    { name: "PyPI",          url: "https://pypi.org/project/{q}" },
+    crates:  { name: "crates.io",     url: "https://crates.io/crates/{q}" }
+  },
+  engines: {
+    ddg:    { name: "DuckDuckGo", url: "https://duckduckgo.com/?q={q}" },
+    google: { name: "Google",     url: "https://www.google.com/search?q={q}" },
+    bing:   { name: "Bing",       url: "https://www.bing.com/search?q={q}" },
+    brave:  { name: "Brave",      url: "https://search.brave.com/search?q={q}" }
+  },
+  defaultEngine: "ddg",
+  theme: "auto",
+  accent: "#7aa8ff",
+  activeProfile: "all",
+  profiles: {
+    all:      { label: "all",      accent: null },
+    frontend: { label: "frontend", accent: "#7aa8ff" },
+    backend:  { label: "backend",  accent: "#4ade80" },
+    homelab:  { label: "homelab",  accent: "#fbbf24" },
+    work:     { label: "work",     accent: "#c084fc" }
+  },
+  pads: {
+    active: "p1",
+    buffers: { p1: { name: "notes", content: "", updated: Date.now() } }
+  },
+  searchHistory: {},
+  clips: [],
+  vault: null,
+  vaultExpiry: {},
+  vaultAutoLockMin: 10,
+  lastExport: 0,
+  firstRun: true,
+  apiRequests: [
+    { id: "r1", name: "GitHub API", method: "GET", url: "https://api.github.com/users/octocat", headers: [{k:"Accept",v:"application/json"}], body: "" }
+  ],
+  plugins: [
+    {
+      id: "pl-hn",
+      name: "Hacker News (top)",
+      enabled: false,
+      code: `async function () {
+  const r = await fetch("https://hacker-news.firebaseio.com/v0/topstories.json");
+  const ids = (await r.json()).slice(0, 5);
+  const items = await Promise.all(ids.map(i => fetch("https://hacker-news.firebaseio.com/v0/item/"+i+".json").then(x => x.json())));
+  return items.map(i => \`<div style="margin:4px 0"><a href="\${i.url || 'https://news.ycombinator.com/item?id='+i.id}" target="_blank">\${i.title}</a></div>\`).join("");
+}`
+    }
+  ],
+  layout: null
+};
+
+const LS_KEY = "startpage.config.v5";
+let cfg = load();
+
+function load() {
+  try {
+    const raw = localStorage.getItem(LS_KEY)
+             || localStorage.getItem("startpage.config.v4")
+             || localStorage.getItem("startpage.config.v3");
+    if (!raw) return structuredClone(DEFAULTS);
+    const parsed = JSON.parse(raw);
+    const merged = { ...structuredClone(DEFAULTS), ...parsed };
+    merged.pads = { ...structuredClone(DEFAULTS.pads), ...(parsed.pads || {}) };
+    merged.pads.buffers = { ...structuredClone(DEFAULTS.pads.buffers), ...((parsed.pads || {}).buffers || {}) };
+    merged.profiles = { ...structuredClone(DEFAULTS.profiles), ...(parsed.profiles || {}) };
+    merged.engines = { ...structuredClone(DEFAULTS.engines), ...(parsed.engines || {}) };
+    merged.bangs   = { ...structuredClone(DEFAULTS.bangs),   ...(parsed.bangs   || {}) };
+    return merged;
+  } catch { return structuredClone(DEFAULTS); }
+}
+function save() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(cfg)); }
+  catch { toast("storage quota exceeded"); }
+}
+
+/* ============================================================
+   TOAST + UNDO
+   ============================================================ */
+let toastTimer, undoSlot;
+function toast(msg, action) {
+  const el = document.getElementById("toast");
+  document.getElementById("toastMsg").textContent = msg;
+  const btn = document.getElementById("toastAction");
+  if (action) {
+    btn.style.display = "";
+    btn.textContent = action.label;
+    btn.onclick = () => { action.run(); el.classList.remove("show"); undoSlot = null; };
+  } else { btn.style.display = "none"; btn.onclick = null; }
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), action ? 6000 : 2000);
+}
+function setUndo(type, item, index) {
+  undoSlot = { type, item, index, ts: Date.now() };
+  toast("deleted — undo?", { label: "↶ undo", run: () => {
+    if (type === "snippet") { cfg.snippets.splice(index, 0, item); save(); renderSnipTags(); renderSnippets(); }
+    if (type === "port")    { cfg.ports.splice(index, 0, item); save(); renderPorts(); }
+    if (type === "infra")   { cfg.infra.splice(index, 0, item); save(); renderInfra(); }
+    if (type === "pad")     { cfg.pads.buffers[item.id] = item.buf; save(); renderPad(); }
+  }});
+}
+
+/* ============================================================
+   THEME + PROFILES
+   ============================================================ */
+function applyTheme() {
+  const t = cfg.theme || "auto";
+  document.documentElement.removeAttribute("data-theme");
+  if (t !== "auto") document.documentElement.setAttribute("data-theme", t);
+  const prof = cfg.profiles[cfg.activeProfile];
+  const accent = (prof && prof.accent) || cfg.accent || "#7aa8ff";
+  document.documentElement.style.setProperty("--accent", accent);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = t === "light" ? "#f7f8fa" : "#0b0c0f";
+}
+document.getElementById("btnTheme").onclick = () => {
+  cfg.theme = cfg.theme === "dark" ? "light" : cfg.theme === "light" ? "auto" : "dark";
+  applyTheme(); save();
+  toast(`theme: ${cfg.theme}`);
+};
+
+function renderProfileSwitch() {
+  const el = document.getElementById("profileSwitch");
+  el.innerHTML = "";
+  Object.entries(cfg.profiles).forEach(([key, p]) => {
+    const b = document.createElement("button");
+    b.className = "icon-btn" + (key === cfg.activeProfile ? " active" : "");
+    if (key === cfg.activeProfile) { b.style.color = "var(--fg)"; b.style.background = "var(--panel-2)"; }
+    b.textContent = p.label;
+    b.title = `Switch to ${p.label} profile`;
+    b.onclick = () => {
+      cfg.activeProfile = key; save(); applyTheme();
+      renderProfileSwitch(); renderPorts(); renderInfra(); renderSnipTags(); renderSnippets(); renderBangHint();
+      toast("profile: " + p.label);
+    };
+    el.appendChild(b);
+  });
+}
+
+/* ============================================================
+   CLOCK
+   ============================================================ */
+function tickClock() {
+  const d = new Date();
+  document.getElementById("clock").textContent =
+    d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) +
+    "  " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+}
+tickClock(); setInterval(tickClock, 15000);
+
+/* ============================================================
+   PORTS
+   ============================================================ */
+const portHistory = {};
+const HISTORY_MAX = 30;
+
+function visiblePorts() {
+  if (cfg.activeProfile === "all") return cfg.ports;
+  return cfg.ports.filter(p => !p.profile || p.profile === cfg.activeProfile || p.profile === "all");
+}
+function renderPorts() {
+  const el = document.getElementById("ports");
+  el.innerHTML = "";
+  const list = visiblePorts();
+  if (!list.length) { el.innerHTML = `<div class="empty">no ports in this profile</div>`; return; }
+  list.forEach(p => {
+    const a = document.createElement("a");
+    a.className = "port";
+    a.href = `http://localhost:${p.port}`;
+    a.target = "_blank"; a.rel = "noopener";
+    a.dataset.port = p.port;
+    a.innerHTML = `
+      <span class="dot checking"></span>
+      <span>${p.port}</span>
+      <span class="label">${p.label || ""}</span>
+      <svg class="spark" viewBox="0 0 36 12" preserveAspectRatio="none"></svg>
+    `;
+    a.addEventListener("mouseenter", () => showPortTooltip(a, p));
+    el.appendChild(a);
+  });
+  checkPorts();
+}
+function showPortTooltip(node, p) {
+  const h = portHistory[p.port] || [];
+  if (!h.length) return;
+  const oks = h.filter(x => x.ok).map(x => x.ms).sort((a,b)=>a-b);
+  const p50 = oks.length ? Math.round(oks[Math.floor(oks.length*0.5)]) : 0;
+  const p95 = oks.length ? Math.round(oks[Math.floor(oks.length*0.95)]) : 0;
+  const up = h.filter(x => x.ok).length;
+  node.title = `${p.label} :${p.port}\np50 ${p50}ms · p95 ${p95}ms\nuptime ${up}/${h.length}`;
+}
+async function checkPorts() {
+  const nodes = [...document.querySelectorAll("#ports .port")];
+  for (const node of nodes) {
+    const port = Number(node.dataset.port);
+    const p = cfg.ports.find(x => x.port === port);
+    if (!p) continue;
+    const dot = node.querySelector(".dot");
+    dot.className = "dot checking";
+    const t0 = performance.now();
+    const ok = await pingHttp(`http://localhost:${p.port}${p.path || "/"}`);
+    const ms = Math.round(performance.now() - t0);
+    (portHistory[port] = portHistory[port] || []).push({ ts: Date.now(), ms, ok });
+    if (portHistory[port].length > HISTORY_MAX) portHistory[port].shift();
+    dot.className = "dot " + (ok ? "up" : "down");
+    drawSpark(node.querySelector(".spark"), portHistory[port]);
+  }
+}
+function drawSpark(svg, hist) {
+  if (!svg) return;
+  const w = 36, h = 12;
+  const pts = hist.slice(-HISTORY_MAX);
+  if (!pts.length) { svg.innerHTML = ""; return; }
+  const xs = pts.map((_, i) => (i / Math.max(1, pts.length - 1)) * w);
+  const maxMs = Math.max(50, ...pts.map(p => p.ms));
+  const ys = pts.map(p => h - (p.ok ? (p.ms / maxMs) * h : 0));
+  const path = pts.map((p, i) => `${i?"L":"M"}${xs[i].toFixed(1)},${ys[i].toFixed(1)}`).join(" ");
+  svg.innerHTML = `<path d="${path}" fill="none" stroke="var(--green)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>`;
+}
+function pingHttp(url, timeout = 1500) {
+  return new Promise(res => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => { ctrl.abort(); res(false); }, timeout);
+    fetch(url, { mode: "no-cors", signal: ctrl.signal, cache: "no-store" })
+      .then(() => { clearTimeout(t); res(true); })
+      .catch(() => { clearTimeout(t); res(false); });
+  });
+}
+setInterval(checkPorts, 20000);
+
+document.getElementById("scanPorts").onclick = () => {
+  const inp = document.createElement("input");
+  inp.type = "file"; inp.accept = ".yml,.yaml,.json";
+  inp.onchange = () => {
+    const f = inp.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      const text = r.result;
+      const found = new Set();
+      for (const m of text.matchAll(/["']?(\d{2,5}):\d{2,5}["']?/g)) found.add(Number(m[1]));
+      for (const m of text.matchAll(/--port[= ]+(\d{2,5})/g)) found.add(Number(m[1]));
+      for (const m of text.matchAll(/localhost:(\d{2,5})/g)) found.add(Number(m[1]));
+      const existing = new Set(cfg.ports.map(p => p.port));
+      const suggestions = [...found].filter(p => !existing.has(p));
+      if (!suggestions.length) { toast("no new ports found"); return; }
+      openModal("Import detected ports", `
+        <p class="hint-text">Found ${suggestions.length} new port(s):</p>
+        ${suggestions.map(p => `<label style="display:block;margin:8px 0"><input type="checkbox" data-p="${p}" checked> <code>${p}</code></label>`).join("")}
+        <div class="row"><button id="doImport">Add selected</button></div>`);
+      document.getElementById("doImport").onclick = () => {
+        document.querySelectorAll("#modalBody input[data-p]:checked").forEach(cb => {
+          cfg.ports.push({ port: Number(cb.dataset.p), label: "auto", path: "/", profile: cfg.activeProfile === "all" ? "frontend" : cfg.activeProfile });
+        });
+        save(); renderPorts(); closeModal();
+        toast(`imported ${suggestions.length} port(s)`);
+      };
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+};
+
+/* ============================================================
+   INFRA
+   ============================================================ */
+function renderInfra() {
+  const el = document.getElementById("infra");
+  el.innerHTML = "";
+  const list = cfg.activeProfile === "all" ? cfg.infra : cfg.infra.filter(x => !x.profile || x.profile === cfg.activeProfile);
+  if (!list.length) { el.innerHTML = `<div class="empty">no infra links in this profile</div>`; return; }
+  list.forEach(item => {
+    const a = document.createElement("a");
+    a.href = item.url; a.target = "_blank"; a.rel = "noopener";
+    a.innerHTML = `<span>${item.label}</span><span class="arrow">↗</span>`;
+    el.appendChild(a);
+  });
+}
+
+/* ============================================================
+   SCRATCHPAD
+   ============================================================ */
+let padSaveTimer;
+const padChan = ("BroadcastChannel" in window) ? new BroadcastChannel("startpage-pads") : null;
+
+function renderPad() {
+  const tabs = document.getElementById("padTabs");
+  const area = document.getElementById("padArea");
+  tabs.innerHTML = "";
+  const buffers = cfg.pads.buffers;
+  Object.entries(buffers).forEach(([id, buf]) => {
+    const t = document.createElement("div");
+    t.className = "pad-tab" + (id === cfg.pads.active ? " active" : "");
+    t.innerHTML = `${escapeHtml(buf.name)} <span class="x" data-x="${id}">✕</span>`;
+    t.addEventListener("click", (e) => {
+      if (e.target.dataset.x) {
+        const delId = e.target.dataset.x;
+        if (Object.keys(buffers).length === 1) { toast("can't delete last buffer"); return; }
+        const item = { id: delId, buf: structuredClone(buffers[delId]) };
+        delete buffers[delId];
+        if (cfg.pads.active === delId) cfg.pads.active = Object.keys(buffers)[0];
+        save(); renderPad(); setUndo("pad", item, 0);
+        return;
+      }
+      cfg.pads.active = id; save(); renderPad();
+    });
+    tabs.appendChild(t);
+  });
+  const add = document.createElement("div");
+  add.className = "pad-tab add"; add.textContent = "+";
+  add.title = "New buffer";
+  add.addEventListener("click", () => newPad());
+  tabs.appendChild(add);
+
+  const cur = buffers[cfg.pads.active];
+  area.value = cur ? cur.content : "";
+  area.placeholder = cur ? cur.name : "";
+  area.oninput = () => {
+    const b = buffers[cfg.pads.active];
+    if (!b) return;
+    b.content = area.value; b.updated = Date.now();
+    updatePadInfo(); highlightPad(area.value, area.scrollTop);
+    clearTimeout(padSaveTimer);
+    padSaveTimer = setTimeout(() => {
+      save(); flashSaved();
+      if (padChan) padChan.postMessage({ type: "pad", id: cfg.pads.active, content: b.content, ts: Date.now() });
+    }, 400);
+  };
+  area.onscroll = () => { document.getElementById("padHl").scrollTop = area.scrollTop; };
+  area.onblur = () => save();
+  updatePadInfo();
+  highlightPad(area.value, 0);
+}
+function updatePadInfo() {
+  const b = cfg.pads.buffers[cfg.pads.active];
+  if (!b) return;
+  const bytes = new Blob([b.content || ""]).size;
+  const lines = (b.content || "").split("\n").length;
+  document.getElementById("padInfo").textContent = `${lines} lines · ${bytes} B · ${b.name}`;
+}
+function flashSaved() {
+  const el = document.getElementById("padSaved");
+  el.textContent = "saved ✓";
+  el.classList.add("flash");
+  setTimeout(() => { el.textContent = "saved"; el.classList.remove("flash"); }, 800);
+}
+function newPad() {
+  const id = "p" + Math.random().toString(36).slice(2, 8);
+  const name = prompt("Buffer name:", "buffer-" + Object.keys(cfg.pads.buffers).length);
+  if (name === null) return;
+  cfg.pads.buffers[id] = { name: name || "untitled", content: "", updated: Date.now() };
+  cfg.pads.active = id;
+  save(); renderPad();
+}
+if (padChan) {
+  padChan.onmessage = (ev) => {
+    if (ev.data && ev.data.type === "pad" && ev.data.id !== cfg.pads.active) {
+      const b = cfg.pads.buffers[ev.data.id];
+      if (b && b.content !== ev.data.content) {
+        b.content = ev.data.content; b.updated = ev.data.ts;
+        save(); renderPad();
+      }
+    }
+  };
+}
+function highlightPad(text, scrollTop) {
+  const hl = document.getElementById("padHl");
+  const trimmed = text.slice(0, 8000);
+  const esc = escapeHtml(trimmed);
+  const html = esc
+    .replace(/("(?:\\.|[^"\\])*")(\s*:)?/g, (m, s, colon) =>
+      colon ? `<span class="k">${s}</span>${colon}` : `<span class="s">${s}</span>`)
+    .replace(/\b(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\b/g, `<span class="n">$1</span>`)
+    .replace(/\b(true|false|null|undefined)\b/g, `<span class="b">$1</span>`)
+    .replace(/(\/\/[^\n]*)/g, `<span class="p">$1</span>`);
+  hl.innerHTML = html + "\n";
+  hl.scrollTop = scrollTop;
+}
+document.getElementById("padAdd").onclick = newPad;
+document.getElementById("padSnapshot").onclick = () => {
+  const b = cfg.pads.buffers[cfg.pads.active];
+  if (!b) return;
+  const id = "p" + Math.random().toString(36).slice(2, 8);
+  cfg.pads.buffers[id] = { name: b.name + " (snap " + new Date().toLocaleTimeString() + ")", content: b.content, updated: Date.now() };
+  save(); renderPad();
+  toast("snapshot created");
+};
+document.getElementById("padExport").onclick = () => {
+  downloadBlob(new Blob([JSON.stringify(cfg.pads, null, 2)], { type: "application/json" }), "scratchpads.json");
+};
+document.getElementById("padImport").onclick = () => {
+  pickFile(text => {
+    try {
+      const data = JSON.parse(text);
+      if (!data.buffers) throw new Error("invalid format");
+      cfg.pads = data; save(); renderPad(); toast("scratchpads imported");
+    } catch (e) { toast("import failed: " + e.message); }
+  });
+};
+document.getElementById("padDiff").onclick = () => {
+  const buffers = cfg.pads.buffers;
+  const ids = Object.keys(buffers);
+  if (ids.length < 2) { toast("need at least 2 buffers"); return; }
+  openModal("Diff buffers", `
+    <div class="diff-grid">
+      <div>
+        <label>Left</label>
+        <select id="diffLeft">${ids.map(id => `<option value="${id}" ${id===cfg.pads.active?"selected":""}>${escapeHtml(buffers[id].name)}</option>`).join("")}</select>
+      </div>
+      <div>
+        <label>Right</label>
+        <select id="diffRight">${ids.map(id => `<option value="${id}">${escapeHtml(buffers[id].name)}</option>`).join("")}</select>
+      </div>
+    </div>
+    <div class="row" style="margin-top:14px"><button id="diffGo">Compute diff</button></div>
+    <div class="diff-out" id="diffOut" style="margin-top:14px"></div>
+  `);
+  document.getElementById("modalBox").classList.add("wide");
+  const go = () => {
+    const l = buffers[document.getElementById("diffLeft").value]?.content || "";
+    const r = buffers[document.getElementById("diffRight").value]?.content || "";
+    const out = diffLines(l, r);
+    document.getElementById("diffOut").innerHTML = out.map(l =>
+      l.type === "add" ? `<span class="add">+ ${escapeHtml(l.text)}</span>` :
+      l.type === "del" ? `<span class="del">- ${escapeHtml(l.text)}</span>` :
+      `<span class="ctx">  ${escapeHtml(l.text)}</span>`
+    ).join("\n");
+  };
+  document.getElementById("diffGo").onclick = go;
+  go();
+};
+function diffLines(a, b) {
+  const A = a.split("\n"), B = b.split("\n");
+  const n = A.length, m = B.length;
+  if (n * m > 250000) return [{ type: "ctx", text: "(files too large for diff — > 250k cells)" }];
+  const dp = Array.from({ length: n + 1 }, () => new Uint32Array(m + 1));
+  for (let i = n - 1; i >= 0; i--)
+    for (let j = m - 1; j >= 0; j--)
+      dp[i][j] = A[i] === B[j] ? dp[i+1][j+1] + 1 : Math.max(dp[i+1][j], dp[i][j+1]);
+  const out = [];
+  let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (A[i] === B[j]) { out.push({ type: "ctx", text: A[i] }); i++; j++; }
+    else if (dp[i+1][j] >= dp[i][j+1]) { out.push({ type: "del", text: A[i] }); i++; }
+    else { out.push({ type: "add", text: B[j] }); j++; }
+  }
+  while (i < n) out.push({ type: "del", text: A[i++] });
+  while (j < m) out.push({ type: "add", text: B[j++] });
+  return out;
+}
+
+/* ============================================================
+   SNIPPETS
+   ============================================================ */
+let snipFilter = "", snipTag = "", snipIndex = 0;
+
+function visibleSnippets() {
+  if (cfg.activeProfile === "all") return cfg.snippets;
+  return cfg.snippets.filter(s => !s.tags || !s.tags.length || s.tags.includes(cfg.activeProfile));
+}
+function frecency(s) {
+  if (!s.uses) return 0;
+  const ageDays = (Date.now() - (s.lastUsed || 0)) / 86400000;
+  return s.uses * Math.pow(0.5, ageDays / 7);
+}
+function renderSnipTags() {
+  const el = document.getElementById("snipTags");
+  el.innerHTML = "";
+  const tags = new Set();
+  visibleSnippets().forEach(s => (s.tags || []).forEach(t => tags.add(t)));
+  const all = document.createElement("div");
+  all.className = "tag" + (snipTag === "" ? " active" : "");
+  all.textContent = "all";
+  all.onclick = () => { snipTag = ""; snipIndex = 0; renderSnipTags(); renderSnippets(); };
+  el.appendChild(all);
+  [...tags].sort().forEach(t => {
+    const d = document.createElement("div");
+    d.className = "tag" + (snipTag === t ? " active" : "");
+    d.textContent = t;
+    d.onclick = () => { snipTag = snipTag === t ? "" : t; snipIndex = 0; renderSnipTags(); renderSnippets(); };
+    el.appendChild(d);
+  });
+}
+function fuzzyScore(needle, hay) {
+  if (!needle) return 1;
+  needle = needle.toLowerCase(); hay = hay.toLowerCase();
+  let i = 0, score = 0, last = -1;
+  for (const c of needle) {
+    const idx = hay.indexOf(c, i);
+    if (idx === -1) return 0;
+    score += 1; if (idx === last + 1) score += 0.5;
+    last = idx; i = idx + 1;
+  }
+  return score / needle.length;
+}
+function filteredSnippets() {
+  let list = visibleSnippets().slice();
+  if (snipTag) list = list.filter(s => (s.tags || []).includes(snipTag));
+  if (snipFilter) {
+    list = list.map(s => ({ s, sc: Math.max(
+      fuzzyScore(snipFilter, s.label),
+      fuzzyScore(snipFilter, s.cmd || ""),
+      fuzzyScore(snipFilter, (s.tags || []).join(" "))
+    )})).filter(x => x.sc > 0).sort((a,b) => b.sc - a.sc).map(x => x.s);
+  } else list.sort((a, b) => frecency(b) - frecency(a));
+  return list;
+}
+function renderSnippets() {
+  const el = document.getElementById("snippets");
+  el.innerHTML = "";
+  const list = filteredSnippets();
+  if (!list.length) { el.innerHTML = `<div class="empty">no snippets match</div>`; return; }
+  if (snipIndex >= list.length) snipIndex = Math.max(0, list.length - 1);
+  list.forEach((s, i) => {
+    const d = document.createElement("div");
+    d.className = "snip" + (i === snipIndex ? " active" : "");
+    const isChain = Array.isArray(s.chain) && s.chain.length;
+    d.innerHTML = `
+      <span class="cmd"><span class="lbl">${escapeHtml(s.label)}${isChain ? " ⛓" : ""}</span>${escapeHtml(s.cmd || (isChain ? s.chain.map(x=>x.cmd).join(" && ") : ""))}</span>
+      <span class="snip-tags">${(s.tags||[]).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join("")}</span>
+      <span class="cp">copy</span>`;
+    d.addEventListener("click", () => copySnippet(s, d));
+    el.appendChild(d);
+  });
+}
+async function copySnippet(s, node) {
+  const steps = (Array.isArray(s.chain) && s.chain.length) ? s.chain : [{ cmd: s.cmd, tags: s.tags }];
+  const allText = steps.map(x => x.cmd).join("\n");
+  const vars = [...allText.matchAll(/\{\{(\w+)\}\}/g)].map(m => m[1]);
+  const unique = [...new Set(vars)];
+  const values = {};
+  for (const v of unique) {
+    const val = prompt(`${s.label} → ${v}:`, "");
+    if (val === null) return;
+    values[v] = val;
+  }
+  const resolved = steps.map(x => x.cmd.replace(/\{\{(\w+)\}\}/g, (_, k) => values[k] ?? `{{${k}}}`));
+  try {
+    await navigator.clipboard.writeText(resolved.join("\n"));
+    s.uses = (s.uses || 0) + 1; s.lastUsed = Date.now(); save();
+    pushClip(resolved.join("\n"), s.label);
+    if (node) {
+      node.classList.add("copied");
+      const cp = node.querySelector(".cp"); if (cp) cp.textContent = "✓ copied";
+      setTimeout(() => { node.classList.remove("copied"); if (cp) cp.textContent = "copy"; }, 900);
+    }
+    toast(steps.length > 1 ? `copied chain (${steps.length} steps)` : "copied");
+  } catch { toast("copy failed"); }
+}
+const snipFilterEl = document.getElementById("snipFilter");
+snipFilterEl.addEventListener("input", () => { snipFilter = snipFilterEl.value.trim(); snipIndex = 0; renderSnippets(); });
+snipFilterEl.addEventListener("keydown", (e) => {
+  const list = filteredSnippets();
+  if (e.key === "ArrowDown") { e.preventDefault(); snipIndex = Math.min(snipIndex + 1, list.length - 1); renderSnippets(); }
+  if (e.key === "ArrowUp")   { e.preventDefault(); snipIndex = Math.max(snipIndex - 1, 0); renderSnippets(); }
+  if (e.key === "Enter" && list[snipIndex]) { e.preventDefault(); copySnippet(list[snipIndex]); }
+  if (e.key === "Escape") snipFilterEl.blur();
+});
+
+/* ============================================================
+   CLIPBOARD HISTORY
+   ============================================================ */
+function pushClip(text, label) {
+  cfg.clips = cfg.clips || [];
+  cfg.clips.unshift({ text: String(text).slice(0, 2000), label: label || "", ts: Date.now() });
+  cfg.clips = cfg.clips.slice(0, 30);
+}
+function openClips() {
+  const clips = cfg.clips || [];
+  openModal("Clipboard history", `
+    <p class="hint-text">In-memory only. Items copied from this page.</p>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${clips.length ? clips.map((c, i) => `
+        <div style="background:var(--panel-hi);border:1px solid var(--border);padding:10px 12px;border-radius:var(--radius);cursor:pointer;transition:border-color .15s" data-ci="${i}">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px">${escapeHtml(c.label||"")} · ${new Date(c.ts).toLocaleTimeString()}</div>
+          <div style="font-family:var(--mono);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(c.text)}</div>
+        </div>`).join("") : `<div class="empty">(empty)</div>`}
+    </div>
+    <div class="row"><button id="clearClips" class="ghost">clear</button></div>`);
+  document.querySelectorAll("[data-ci]").forEach(el => {
+    el.onmouseenter = () => el.style.borderColor = "var(--accent)";
+    el.onmouseleave = () => el.style.borderColor = "var(--border)";
+    el.onclick = () => {
+      const c = clips[Number(el.dataset.ci)];
+      navigator.clipboard.writeText(c.text);
+      toast("copied from history");
+      closeModal();
+    };
+  });
+  document.getElementById("clearClips").onclick = () => { cfg.clips = []; save(); openClips(); };
+}
+
+/* ============================================================
+   OMNIBAR
+   ============================================================ */
+const omni = document.getElementById("omni");
+const bangHint = document.getElementById("bangHint");
+
+function renderBangHint() {
+  bangHint.innerHTML = "";
+  const engineMap = { google: "?g", ddg: "?d", bing: "?b", brave: "?br" };
+  const addLabel = (text) => {
+    const l = document.createElement("span");
+    l.className = "hint-label";
+    l.textContent = text;
+    bangHint.appendChild(l);
+  };
+  addLabel("engines");
+  Object.entries(cfg.engines).forEach(([key, eng]) => {
+    const s = document.createElement("span");
+    s.className = "chip";
+    s.textContent = engineMap[key] || ("?" + key);
+    s.title = `Search with ${eng.name}`;
+    s.addEventListener("click", () => { omni.value = (engineMap[key] || "?" + key) + " "; omni.focus(); });
+    bangHint.appendChild(s);
+  });
+  addLabel("bangs");
+  Object.entries(cfg.bangs).forEach(([k, v]) => {
+    const s = document.createElement("span");
+    s.className = "chip";
+    s.textContent = k; s.title = v.name;
+    s.addEventListener("click", () => { omni.value = k + " "; omni.focus(); });
+    bangHint.appendChild(s);
+  });
+  const defaultName = cfg.engines[cfg.defaultEngine]?.name || "DuckDuckGo";
+  document.getElementById("bangCount").textContent =
+    `${Object.keys(cfg.bangs).length} bangs · ${cfg.ports.length} ports · ${cfg.snippets.length} snippets · default ${defaultName}`;
+}
+function matchEngine(token) {
+  if (!token) return null;
+  const t = token.toLowerCase();
+  const aliasMap = { "?g": "google", "?d": "ddg", "?b": "bing", "?br": "brave" };
+  if (aliasMap[t] && cfg.engines[aliasMap[t]]) return cfg.engines[aliasMap[t]];
+  for (const key of Object.keys(cfg.engines)) if (t === "?" + key) return cfg.engines[key];
+  return null;
+}
+function resolveBang(prefix) {
+  const p = prefix.toLowerCase();
+  if (cfg.bangs[p]) return cfg.bangs[p];
+  const hits = Object.keys(cfg.bangs).filter(k => k.startsWith(p));
+  if (hits.length === 1) return cfg.bangs[hits[0]];
+  return null;
+}
+function recordSearch(q, bang) {
+  const key = (bang || "default") + "|" + q;
+  const h = cfg.searchHistory[key] || { q, bang: bang || null, count: 0, last: 0 };
+  h.count++; h.last = Date.now();
+  cfg.searchHistory[key] = h;
+  const entries = Object.entries(cfg.searchHistory).sort((a,b) => b[1].last - a[1].last).slice(0, 200);
+  cfg.searchHistory = Object.fromEntries(entries);
+  save();
+}
+omni.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+  const raw = omni.value.trim(); if (!raw) return;
+  const [first, ...rest] = raw.split(/\s+/);
+  const q = rest.join(" ");
+  let url, bangUsed = null;
+  const em = matchEngine(first);
+  if (em && q) url = em.url.replace("{q}", encodeURIComponent(q));
+  else {
+    const m = resolveBang(first);
+    if (m && q) { url = m.url.replace("{q}", encodeURIComponent(q)); bangUsed = first; }
+    else if (m && !q) url = m.url.replace("{q}", "");
+    else { const eng = cfg.engines[cfg.defaultEngine] || cfg.engines.ddg; url = eng.url.replace("{q}", encodeURIComponent(raw)); }
+  }
+  recordSearch(q || raw, bangUsed);
+  window.location.href = url;
+  omni.value = "";
+});
+function renderEngineSwitch() {
+  const el = document.getElementById("engineSwitch");
+  el.innerHTML = "";
+  Object.entries(cfg.engines).forEach(([key, eng]) => {
+    const b = document.createElement("button");
+    b.className = "icon-btn" + (key === cfg.defaultEngine ? " active" : "");
+    if (key === cfg.defaultEngine) { b.style.color = "var(--fg)"; b.style.background = "var(--panel-2)"; }
+    b.textContent = eng.name;
+    b.title = `Default search engine: ${eng.name}`;
+    b.onclick = () => { cfg.defaultEngine = key; save(); renderEngineSwitch(); renderBangHint(); toast("default: " + eng.name); };
+    el.appendChild(b);
+  });
+}
+
+/* ============================================================
+   MODAL + TOOLS
+   ============================================================ */
+const modal = document.getElementById("modal");
+const modalBox = document.getElementById("modalBox");
+const modalTitle = document.getElementById("modalTitle");
+const modalBody = document.getElementById("modalBody");
+
+function openModal(title, html, wide) {
+  modalTitle.textContent = title;
+  modalBody.innerHTML = html;
+  modalBox.classList.toggle("wide", !!wide);
+  modal.classList.add("open");
+}
+function closeModal() { modal.classList.remove("open"); modalBox.classList.remove("wide"); }
+document.getElementById("modalClose").onclick = closeModal;
+modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
+
+document.querySelectorAll(".tool-btn").forEach(btn => {
+  btn.addEventListener("click", () => openTool(btn.dataset.tool));
+});
+function openTool(name) {
+  ({ json: toolJson, b64: toolB64, jwt: toolJwt, ts: toolTs, regex: toolRegex,
+     uuid: toolUuid, hash: toolHash, url: toolUrl, color: toolColor, api: toolApi, more: toolMore })[name]?.();
+}
+
+function toolJson() {
+  openModal("JSON Format / Validate", `
+    <div class="field"><label>Input</label><textarea id="jsonIn" rows="8"></textarea></div>
+    <div class="row">
+      <button id="jsonFmt">Format</button>
+      <button id="jsonMin" class="ghost">Minify</button>
+      <button id="jsonVal" class="ghost">Validate</button>
+      <button id="jsonCopy" class="ghost">Copy</button>
+    </div>
+    <div class="out" id="jsonOut"></div>`);
+  const $in = document.getElementById("jsonIn"), $out = document.getElementById("jsonOut");
+  const run = (mode) => {
+    const raw = $in.value.trim();
+    if (!raw) { $out.textContent = ""; return; }
+    try { const o = JSON.parse(raw);
+      $out.classList.remove("err"); $out.textContent = mode === "min" ? JSON.stringify(o) : JSON.stringify(o, null, 2);
+    } catch (e) { $out.classList.add("err"); $out.textContent = "✗ " + e.message; }
+  };
+  document.getElementById("jsonFmt").onclick = () => run("fmt");
+  document.getElementById("jsonMin").onclick = () => run("min");
+  document.getElementById("jsonVal").onclick = () => run("val");
+  document.getElementById("jsonCopy").onclick = () => { const t = $out.textContent || ""; navigator.clipboard.writeText(t); pushClip(t, "json"); toast("copied"); };
+  $in.focus();
+}
+function toolB64() {
+  openModal("Base64 Encode / Decode", `
+    <div class="field"><label>Input</label><textarea id="b64In" rows="6"></textarea></div>
+    <div class="row"><button id="b64Enc">Encode</button><button id="b64Dec" class="ghost">Decode</button><button id="b64Copy" class="ghost">Copy</button></div>
+    <div class="out" id="b64Out"></div>`);
+  const $in = document.getElementById("b64In"), $out = document.getElementById("b64Out");
+  const enc = s => btoa(unescape(encodeURIComponent(s)));
+  const dec = s => decodeURIComponent(escape(atob(s.trim())));
+  document.getElementById("b64Enc").onclick = () => { try { $out.classList.remove("err"); $out.textContent = enc($in.value); } catch(e){$out.classList.add("err");$out.textContent="✗ "+e.message;} };
+  document.getElementById("b64Dec").onclick = () => { try { $out.classList.remove("err"); $out.textContent = dec($in.value); } catch{$out.classList.add("err");$out.textContent="✗ invalid base64";} };
+  document.getElementById("b64Copy").onclick = () => { navigator.clipboard.writeText($out.textContent || ""); pushClip($out.textContent, "b64"); toast("copied"); };
+  $in.focus();
+}
+function toolJwt() {
+  openModal("JWT Decode (no verify)", `
+    <div class="field"><label>Token</label><textarea id="jwtIn" rows="5"></textarea></div>
+    <div class="row"><button id="jwtGo">Decode</button><button id="jwtCopy" class="ghost">Copy payload</button></div>
+    <div class="out" id="jwtOut"></div>`);
+  const $in = document.getElementById("jwtIn"), $out = document.getElementById("jwtOut");
+  const b64u = s => { s = s.replace(/-/g,"+").replace(/_/g,"/"); while (s.length%4) s+="="; return decodeURIComponent(escape(atob(s))); };
+  document.getElementById("jwtGo").onclick = () => {
+    const parts = $in.value.trim().split(".");
+    if (parts.length < 2) { $out.classList.add("err"); $out.textContent = "✗ not a JWT"; return; }
+    try {
+      const h = JSON.parse(b64u(parts[0])), p = JSON.parse(b64u(parts[1]));
+      $out.classList.remove("err");
+      let extra = "";
+      if (p.exp) { const exp = new Date(p.exp*1000), delta = Math.round((exp-Date.now())/1000);
+        extra = `\n\nExpiry: ${exp.toISOString()} (${delta>0?"in "+humanSec(delta):"expired "+humanSec(-delta)+" ago"})`; }
+      $out.textContent = "HEADER\n"+JSON.stringify(h,null,2)+"\n\nPAYLOAD\n"+JSON.stringify(p,null,2)+extra;
+    } catch (e) { $out.classList.add("err"); $out.textContent = "✗ " + e.message; }
+  };
+  document.getElementById("jwtCopy").onclick = () => {
+    const t = $out.textContent || ""; const m = t.match(/PAYLOAD\n([\s\S]*?)(\n\nExpiry|$)/);
+    navigator.clipboard.writeText(m ? m[1] : t); pushClip(m?m[1]:t, "jwt"); toast("copied");
+  };
+  $in.focus();
+}
+function humanSec(s) { if (s<60) return s+"s"; if (s<3600) return Math.round(s/60)+"m"; if (s<86400) return Math.round(s/3600)+"h"; return Math.round(s/86400)+"d"; }
+function toolTs() {
+  openModal("Unix Timestamp", `
+    <div class="field"><label>Timestamp (s or ms) — blank = now</label><input type="text" id="tsIn" /></div>
+    <div class="row"><button id="tsParse">Parse</button><button id="tsNow" class="ghost">Now</button></div>
+    <div class="out" id="tsOut"></div>`);
+  const $in = document.getElementById("tsIn"), $out = document.getElementById("tsOut");
+  const parse = (v) => {
+    let n = Number(v); if (!v) n = Date.now()/1000;
+    if (isNaN(n)) { $out.classList.add("err"); $out.textContent = "✗ not a number"; return; }
+    let ms = n; if (Math.abs(n) < 1e12) ms = n*1000;
+    const d = new Date(ms), delta = Math.round((d-Date.now())/1000);
+    $out.classList.remove("err");
+    $out.textContent = `Unix (s):  ${Math.floor(d.getTime()/1000)}\nUnix (ms): ${d.getTime()}\nISO:       ${d.toISOString()}\nLocal:     ${d.toString()}\nRelative:  ${delta>0?"in "+humanSec(delta):humanSec(-delta)+" ago"}`;
+  };
+  document.getElementById("tsParse").onclick = () => parse($in.value.trim());
+  document.getElementById("tsNow").onclick = () => { $in.value = ""; parse(""); };
+  $in.focus(); parse("");
+}
+function toolRegex() {
+  openModal("Regex Tester", `
+    <div class="field"><label>Pattern</label><input type="text" id="rePat" /></div>
+    <div class="field"><label>Flags</label><input type="text" id="reFlags" value="g" /></div>
+    <div class="field"><label>Test string</label><textarea id="reIn" rows="5"></textarea></div>
+    <div class="out" id="reOut"></div>`);
+  const $pat = document.getElementById("rePat"), $fl = document.getElementById("reFlags"), $in = document.getElementById("reIn"), $out = document.getElementById("reOut");
+  const run = () => {
+    const p = $pat.value; if (!p) { $out.textContent = ""; return; }
+    let re; try { re = new RegExp(p, $fl.value); } catch (e) { $out.classList.add("err"); $out.textContent = "✗ " + e.message; return; }
+    const txt = $in.value; let m, count = 0, lines = [];
+    if (re.global) { while ((m = re.exec(txt)) !== null) {
+      count++; lines.push(`#${count} @${m.index}: ${JSON.stringify(m[0])}`+(m.length>1?"\n    groups: "+JSON.stringify(m.slice(1)):""));
+      if (m.index === re.lastIndex) re.lastIndex++; if (count > 200) { lines.push("… (truncated)"); break; }
+    } } else { m = re.exec(txt); if (m) lines.push(`@${m.index}: ${JSON.stringify(m[0])}`+(m.length>1?"\n    groups: "+JSON.stringify(m.slice(1)):"")); }
+    $out.classList.remove("err"); $out.textContent = lines.length ? lines.join("\n") : "(no matches)";
+  };
+  [$pat, $fl, $in].forEach(el => el.addEventListener("input", run));
+  $pat.focus();
+}
+function toolUuid() {
+  openModal("UUID Generator", `
+    <div class="field"><label>Count</label><input type="text" id="uuidN" value="5" /></div>
+    <div class="row">
+      <button id="uuidV4">v4</button>
+      <button id="uuidV7" class="ghost">v7 (time-sortable)</button>
+      <button id="uuidCopy" class="ghost">Copy all</button>
+    </div>
+    <div class="out" id="uuidOut"></div>`);
+  const $out = document.getElementById("uuidOut");
+  const genV4 = () => crypto.randomUUID();
+  const genV7 = () => {
+    const ms = Date.now();
+    const bytes = new Uint8Array(16);
+    bytes[0] = (ms / 2**40) & 0xff; bytes[1] = (ms / 2**32) & 0xff;
+    bytes[2] = (ms / 2**24) & 0xff; bytes[3] = (ms / 2**16) & 0xff;
+    bytes[4] = (ms / 2**8) & 0xff;  bytes[5] = ms & 0xff;
+    crypto.getRandomValues(bytes.subarray(6));
+    bytes[6] = (bytes[6] & 0x0f) | 0x70;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const h = [...bytes].map(b => b.toString(16).padStart(2, "0")).join("");
+    return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
+  };
+  const run = (fn) => {
+    const n = Math.max(1, Math.min(1000, Number(document.getElementById("uuidN").value) || 1));
+    $out.textContent = Array.from({ length: n }, fn).join("\n");
+  };
+  document.getElementById("uuidV4").onclick = () => run(genV4);
+  document.getElementById("uuidV7").onclick = () => run(genV7);
+  document.getElementById("uuidCopy").onclick = () => { navigator.clipboard.writeText($out.textContent); pushClip($out.textContent, "uuid"); toast("copied"); };
+  run(genV4);
+}
+function toolHash() {
+  openModal("Hash", `
+    <div class="field"><label>Input</label><textarea id="hashIn" rows="5"></textarea></div>
+    <div class="row"><button id="hashSha256">SHA-256</button><button id="hashSha1" class="ghost">SHA-1</button></div>
+    <div class="out" id="hashOut"></div>`);
+  const $in = document.getElementById("hashIn"), $out = document.getElementById("hashOut");
+  const run = async (alg) => {
+    const buf = new TextEncoder().encode($in.value);
+    const digest = await crypto.subtle.digest(alg, buf);
+    const hex = [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
+    $out.textContent = hex;
+  };
+  document.getElementById("hashSha256").onclick = () => run("SHA-256");
+  document.getElementById("hashSha1").onclick = () => run("SHA-1");
+  $in.addEventListener("input", () => run("SHA-256"));
+  $in.focus();
+}
+function toolUrl() {
+  openModal("URL Encode / Decode", `
+    <div class="field"><label>Input</label><textarea id="urlIn" rows="5"></textarea></div>
+    <div class="row"><button id="urlEnc">Encode</button><button id="urlDec" class="ghost">Decode</button><button id="urlCopy" class="ghost">Copy</button></div>
+    <div class="out" id="urlOut"></div>`);
+  const $in = document.getElementById("urlIn"), $out = document.getElementById("urlOut");
+  document.getElementById("urlEnc").onclick = () => { try { $out.classList.remove("err"); $out.textContent = encodeURIComponent($in.value); } catch(e){$out.classList.add("err");$out.textContent="✗ "+e.message;} };
+  document.getElementById("urlDec").onclick = () => { try { $out.classList.remove("err"); $out.textContent = decodeURIComponent($in.value); } catch{$out.classList.add("err");$out.textContent="✗ invalid";} };
+  document.getElementById("urlCopy").onclick = () => { navigator.clipboard.writeText($out.textContent || ""); pushClip($out.textContent, "url"); toast("copied"); };
+  $in.focus();
+}
+function toolColor() {
+  openModal("Color Converter", `
+    <div class="field"><label>Hex / rgb() / hsl()</label><input type="text" id="colorIn" value="#7aa8ff" /></div>
+    <div style="height:48px;border-radius:var(--radius);border:1px solid var(--border);margin-bottom:14px" id="colorSwatch"></div>
+    <div class="out" id="colorOut"></div>`);
+  const $in = document.getElementById("colorIn"), $out = document.getElementById("colorOut"), $sw = document.getElementById("colorSwatch");
+  const hexToRgb = h => {
+    h = h.replace("#",""); if (h.length === 3) h = h.split("").map(c => c+c).join("");
+    const n = parseInt(h, 16); return { r: (n>>16)&255, g: (n>>8)&255, b: n&255 };
+  };
+  const rgbToHex = ({r,g,b}) => "#" + [r,g,b].map(x => x.toString(16).padStart(2,"0")).join("");
+  const rgbToHsl = ({r,g,b}) => {
+    r/=255; g/=255; b/=255;
+    const max = Math.max(r,g,b), min = Math.min(r,g,b);
+    let h, s, l = (max+min)/2;
+    if (max === min) { h = s = 0; } else {
+      const d = max-min; s = l > .5 ? d/(2-max-min) : d/(max+min);
+      switch (max) { case r: h = (g-b)/d + (g<b?6:0); break; case g: h = (b-r)/d + 2; break; case b: h = (r-g)/d + 4; break; }
+      h *= 60;
+    }
+    return { h: Math.round(h), s: Math.round(s*100), l: Math.round(l*100) };
+  };
+  const run = () => {
+    const v = $in.value.trim(); let rgb;
+    try {
+      if (v.startsWith("#") || /^[0-9a-f]{3,6}$/i.test(v)) rgb = hexToRgb(v.startsWith("#")?v:"#"+v);
+      else if (v.startsWith("rgb")) { const m = v.match(/(\d+)\D+(\d+)\D+(\d+)/); rgb = {r:+m[1],g:+m[2],b:+m[3]}; }
+      else { $out.classList.add("err"); $out.textContent = "✗ unsupported format"; return; }
+    } catch { $out.classList.add("err"); $out.textContent = "✗ parse error"; return; }
+    const hex = rgbToHex(rgb), hsl = rgbToHsl(rgb);
+    $sw.style.background = hex;
+    $out.classList.remove("err");
+    $out.textContent = `HEX: ${hex}\nRGB: rgb(${rgb.r}, ${rgb.g}, ${rgb.b})\nHSL: hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+  };
+  $in.addEventListener("input", run); run(); $in.focus();
+}
+function toolApi() {
+  openModal("API Tester", `
+    <div class="api-saved" id="apiSaved"></div>
+    <div class="api-req">
+      <select id="apiMethod">
+        <option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option><option>HEAD</option><option>OPTIONS</option>
+      </select>
+      <input type="text" id="apiUrl" placeholder="https://api.example.com/users" />
+    </div>
+    <div class="field">
+      <label>Headers</label>
+      <div class="api-headers" id="apiHeaders"></div>
+      <button class="btn ghost" id="apiAddHeader" style="margin-top:6px">+ header</button>
+    </div>
+    <div class="field">
+      <label>Body</label>
+      <textarea id="apiBody" rows="6" placeholder="{ }" spellcheck="false"></textarea>
+    </div>
+    <div class="row">
+      <button id="apiSend">Send</button>
+      <button id="apiSave" class="ghost">Save request</button>
+      <button id="apiClear" class="ghost">Clear</button>
+    </div>
+    <div class="api-meta" id="apiMeta"></div>
+    <div class="api-resp" id="apiResp"></div>
+  `);
+  document.getElementById("modalBox").classList.add("wide");
+
+  const headersEl = document.getElementById("apiHeaders");
+  function addHeaderRow(k = "", v = "") {
+    const row = document.createElement("div");
+    row.className = "hrow";
+    row.innerHTML = `<input type="text" placeholder="Header" value="${escapeHtml(k)}"><input type="text" placeholder="Value" value="${escapeHtml(v)}"><button title="remove">✕</button>`;
+    row.querySelector("button").onclick = () => row.remove();
+    headersEl.appendChild(row);
+  }
+  addHeaderRow("Accept", "application/json");
+  document.getElementById("apiAddHeader").onclick = () => addHeaderRow();
+
+  function renderSaved() {
+    const el = document.getElementById("apiSaved");
+    el.innerHTML = "";
+    (cfg.apiRequests || []).forEach((r) => {
+      const chip = document.createElement("div");
+      chip.className = "chip";
+      chip.innerHTML = `<span>${escapeHtml(r.name)}</span><span class="x" data-del="${r.id}">✕</span>`;
+      chip.onclick = (e) => {
+        if (e.target.dataset.del) {
+          cfg.apiRequests = cfg.apiRequests.filter(x => x.id !== e.target.dataset.del);
+          save(); renderSaved(); return;
+        }
+        document.getElementById("apiMethod").value = r.method;
+        document.getElementById("apiUrl").value = r.url;
+        headersEl.innerHTML = "";
+        (r.headers || []).forEach(h => addHeaderRow(h.k, h.v));
+        if (!r.headers?.length) addHeaderRow();
+        document.getElementById("apiBody").value = r.body || "";
+      };
+      el.appendChild(chip);
+    });
+  }
+  renderSaved();
+
+  document.getElementById("apiSend").onclick = async () => {
+    const method = document.getElementById("apiMethod").value;
+    const url = document.getElementById("apiUrl").value.trim();
+    if (!url) return;
+    const headers = {};
+    [...headersEl.querySelectorAll(".hrow")].forEach(r => {
+      const [k, v] = r.querySelectorAll("input");
+      if (k.value.trim()) headers[k.value.trim()] = v.value;
+    });
+    const body = document.getElementById("apiBody").value;
+    const opts = { method, headers };
+    if (!["GET","HEAD"].includes(method) && body.trim()) opts.body = body;
+    const meta = document.getElementById("apiMeta");
+    const resp = document.getElementById("apiResp");
+    meta.innerHTML = "sending…"; resp.textContent = "";
+    const t0 = performance.now();
+    try {
+      const r = await fetch(url, opts);
+      const ms = Math.round(performance.now() - t0);
+      const text = await r.text();
+      const ct = r.headers.get("content-type") || "";
+      let pretty = text;
+      if (ct.includes("json")) { try { pretty = JSON.stringify(JSON.parse(text), null, 2); } catch {} }
+      meta.innerHTML = `<span class="${r.ok ? "ok" : "err"}">${r.status} ${r.statusText}</span><span>${ms}ms</span><span>${text.length}B</span><span>${escapeHtml(ct)}</span>`;
+      resp.textContent = pretty;
+      pushClip(pretty.slice(0, 2000), "api response");
+    } catch (e) {
+      const ms = Math.round(performance.now() - t0);
+      meta.innerHTML = `<span class="err">network error</span><span>${ms}ms</span>`;
+      resp.textContent = "✗ " + e.message + "\n\n(Note: CORS blocks cross-origin reads unless the server opts in.)";
+    }
+  };
+  document.getElementById("apiSave").onclick = () => {
+    const name = prompt("Name this request:", "request-" + ((cfg.apiRequests || []).length + 1));
+    if (!name) return;
+    const headers = [...headersEl.querySelectorAll(".hrow")].map(r => {
+      const [k, v] = r.querySelectorAll("input"); return { k: k.value, v: v.value };
+    }).filter(h => h.k.trim());
+    const req = {
+      id: "r" + Math.random().toString(36).slice(2, 8),
+      name, method: document.getElementById("apiMethod").value,
+      url: document.getElementById("apiUrl").value,
+      headers, body: document.getElementById("apiBody").value
+    };
+    cfg.apiRequests = cfg.apiRequests || [];
+    cfg.apiRequests.push(req); save(); renderSaved();
+    toast("saved");
+  };
+  document.getElementById("apiClear").onclick = () => {
+    headersEl.innerHTML = ""; addHeaderRow();
+    document.getElementById("apiUrl").value = "";
+    document.getElementById("apiBody").value = "";
+    document.getElementById("apiResp").textContent = "";
+    document.getElementById("apiMeta").innerHTML = "";
+  };
+  document.getElementById("apiUrl").focus();
+}
+function toolMore() {
+  openModal("More tools", `
+    <div class="tabs">
+      <button class="tb active" data-tab="jy">JSON → YAML</button>
+      <button class="tb" data-tab="yj">YAML → JSON (basic)</button>
+    </div>
+    <div id="moreBody"></div>`);
+  const render = (tab) => {
+    const body = document.getElementById("moreBody");
+    if (tab === "jy") {
+      body.innerHTML = `
+        <div class="field"><label>JSON</label><textarea id="jyIn" rows="6"></textarea></div>
+        <div class="row"><button id="jyGo">Convert</button><button id="jyCopy" class="ghost">Copy</button></div>
+        <div class="out" id="jyOut"></div>`;
+      document.getElementById("jyGo").onclick = () => {
+        try { const obj = JSON.parse(document.getElementById("jyIn").value); document.getElementById("jyOut").textContent = jsonToYaml(obj); }
+        catch(e){ const o=document.getElementById("jyOut"); o.classList.add("err"); o.textContent = "✗ " + e.message; }
+      };
+      document.getElementById("jyCopy").onclick = () => { navigator.clipboard.writeText(document.getElementById("jyOut").textContent); pushClip(document.getElementById("jyOut").textContent, "yaml"); toast("copied"); };
+    } else {
+      body.innerHTML = `
+        <div class="field"><label>YAML (simple key: value, lists with -)</label><textarea id="yjIn" rows="6"></textarea></div>
+        <div class="row"><button id="yjGo">Convert</button><button id="yjCopy" class="ghost">Copy</button></div>
+        <div class="out" id="yjOut"></div>`;
+      document.getElementById("yjGo").onclick = () => {
+        try { document.getElementById("yjOut").textContent = JSON.stringify(yamlToJson(document.getElementById("yjIn").value), null, 2); }
+        catch(e){ const o=document.getElementById("yjOut"); o.classList.add("err"); o.textContent = "✗ " + e.message; }
+      };
+      document.getElementById("yjCopy").onclick = () => { navigator.clipboard.writeText(document.getElementById("yjOut").textContent); pushClip(document.getElementById("yjOut").textContent, "json"); toast("copied"); };
+    }
+  };
+  document.querySelectorAll(".tabs .tb").forEach(b => b.onclick = () => {
+    document.querySelectorAll(".tabs .tb").forEach(x => x.classList.remove("active"));
+    b.classList.add("active"); render(b.dataset.tab);
+  });
+  render("jy");
+}
+function jsonToYaml(o, indent = 0) {
+  const pad = "  ".repeat(indent);
+  if (Array.isArray(o)) return o.map(v => pad + "- " + jsonToYaml(v, indent+1).trimStart()).join("\n");
+  if (o && typeof o === "object") return Object.entries(o).map(([k,v]) => {
+    if (v && typeof v === "object") return `${pad}${k}:\n${jsonToYaml(v, indent+1)}`;
+    return `${pad}${k}: ${typeof v === "string" ? JSON.stringify(v) : v}`;
+  }).join("\n");
+  return String(o);
+}
+function yamlToJson(text) {
+  const lines = text.split("\n").filter(l => l.trim() && !l.trim().startsWith("#"));
+  const root = {}; const stack = [{ indent: -1, obj: root }];
+  for (const raw of lines) {
+    const indent = raw.match(/^\s*/)[0].length;
+    const line = raw.trim();
+    while (stack.length > 1 && indent <= stack[stack.length-1].indent) stack.pop();
+    const parent = stack[stack.length-1].obj;
+    if (line.startsWith("- ")) {
+      const v = line.slice(2);
+      if (!Array.isArray(parent)) throw new Error("list without key");
+      parent.push(parseScalar(v));
+    } else {
+      const m = line.match(/^([^:]+):\s*(.*)$/);
+      if (!m) continue;
+      const key = m[1].trim(), val = m[2];
+      if (val === "") { const child = {}; parent[key] = child; stack.push({ indent, obj: child }); }
+      else parent[key] = parseScalar(val);
+    }
+  }
+  return root;
+}
+function parseScalar(v) {
+  if (v === "true" || v === "false") return v === "true";
+  if (v === "null" || v === "~") return null;
+  if (/^-?\d+$/.test(v)) return Number(v);
+  if (/^-?\d+\.\d+$/.test(v)) return Number(v);
+  return v.replace(/^["']|["']$/g, "");
+}
+
+/* ============================================================
+   PLUGINS
+   ============================================================ */
+async function renderPlugins() {
+  const host = document.getElementById("pluginHost");
+  host.innerHTML = "";
+  for (const p of (cfg.plugins || [])) {
+    if (!p.enabled) continue;
+    const card = document.createElement("div");
+    card.className = "plugin-widget";
+    card.innerHTML = `
+      <h2>${escapeHtml(p.name)} <span class="badge-plugin">plugin</span></h2>
+      <div class="body">…</div>`;
+    host.appendChild(card);
+    const body = card.querySelector(".body");
+    try {
+      const fn = new Function(`return (async () => { ${p.code} })()`);
+      const result = await fn();
+      body.innerHTML = result || "";
+    } catch (e) {
+      body.innerHTML = `<span style="color:var(--red)">plugin error: ${escapeHtml(e.message)}</span>`;
+    }
+  }
+}
+document.getElementById("btnPlugins").onclick = () => openPlugins();
+
+function openPlugins() {
+  const plugins = cfg.plugins || [];
+  openModal("Plugins", `
+    <p class="hint-text">
+      Plugins are inline JS. They run in this page's context — <strong>only add code you trust</strong>.
+      Body must be an <code>async</code> function body; return an HTML string.
+    </p>
+    <div class="field">
+      <label>Installed plugins (JSON — edit + Save)</label>
+      <textarea id="plEdit" rows="16" spellcheck="false">${escapeHtml(JSON.stringify(plugins, null, 2))}</textarea>
+    </div>
+    <div class="row">
+      <button id="plSave">Save</button>
+      <button id="plReload" class="ghost">Reload widgets</button>
+    </div>
+    <div class="out" id="plOut"></div>`);
+  document.getElementById("modalBox").classList.add("wide");
+  document.getElementById("plSave").onclick = () => {
+    try {
+      const parsed = JSON.parse(document.getElementById("plEdit").value);
+      if (!Array.isArray(parsed)) throw new Error("must be array");
+      cfg.plugins = parsed; save(); renderPlugins(); toast("plugins saved");
+    } catch (e) { const o = document.getElementById("plOut"); o.classList.add("err"); o.textContent = "✗ " + e.message; }
+  };
+  document.getElementById("plReload").onclick = () => { renderPlugins(); toast("reloaded"); };
+}
+
+/* ============================================================
+   CONFIG EDITORS
+   ============================================================ */
+document.getElementById("editPorts").onclick = () => editJson("Ports", "ports");
+document.getElementById("editInfra").onclick = () => editJson("Infrastructure", "infra");
+document.getElementById("editSnippets").onclick = () => editJson("Snippets", "snippets");
+
+function editJson(title, key) {
+  const current = JSON.stringify(cfg[key], null, 2);
+  openModal(`Edit ${title}`, `
+    <div class="field"><label>JSON array</label>
+    <textarea id="cfgEdit" rows="16" spellcheck="false">${escapeHtml(current)}</textarea></div>
+    <div class="row"><button id="cfgSave">Save</button><button id="cfgCancel" class="ghost">Cancel</button></div>
+    <div class="out" id="cfgOut"></div>`);
+  const $t = document.getElementById("cfgEdit"), $out = document.getElementById("cfgOut");
+  document.getElementById("cfgSave").onclick = () => {
+    try {
+      const parsed = JSON.parse($t.value);
+      if (!Array.isArray(parsed)) throw new Error("must be an array");
+      cfg[key] = parsed; save();
+      if (key === "ports") renderPorts();
+      if (key === "infra") renderInfra();
+      if (key === "snippets") { renderSnipTags(); renderSnippets(); renderBangHint(); }
+      closeModal();
+      toast("saved");
+    } catch (e) { $out.classList.add("err"); $out.textContent = "✗ " + e.message; }
+  };
+  document.getElementById("cfgCancel").onclick = closeModal;
+  $t.focus();
+}
+
+/* ============================================================
+   COMMAND PALETTE
+   ============================================================ */
+const paletteBackdrop = document.getElementById("paletteBackdrop");
+const paletteInput = document.getElementById("paletteInput");
+const paletteList = document.getElementById("paletteList");
+let paletteCommands = [], paletteActive = 0;
+
+function buildCommands() {
+  const cmds = [];
+  const t = (label, k, run) => cmds.push({ cat:"tool", label, k, run });
+  t("JSON: format / validate", "⌘J", () => openTool("json"));
+  t("Base64: encode / decode", "⌘B", () => openTool("b64"));
+  t("JWT: decode", "⌘U", () => openTool("jwt"));
+  t("Timestamp: parse", "⌘T", () => openTool("ts"));
+  t("Regex: test", "⌘R", () => openTool("regex"));
+  t("UUID generator", "", () => openTool("uuid"));
+  t("Hash (SHA-1/256)", "", () => openTool("hash"));
+  t("URL encode/decode", "", () => openTool("url"));
+  t("Color converter", "", () => openTool("color"));
+  t("API tester", "", () => openTool("api"));
+  t("More tools (JSON↔YAML)", "", () => openTool("more"));
+
+  Object.entries(cfg.pads.buffers).forEach(([id, buf]) => cmds.push({
+    cat:"scratchpad", label:`Scratchpad: ${buf.name}`,
+    run:()=>{ cfg.pads.active = id; save(); renderPad(); closePalette(); document.getElementById("padArea").focus(); }
+  }));
+  cmds.push({ cat:"scratchpad", label:"New scratchpad buffer", run:()=>{ closePalette(); newPad(); } });
+  cmds.push({ cat:"scratchpad", label:"Summon scratchpad", k:"⌘⇧S", run:()=>{ closePalette(); summonPad(); } });
+  cmds.push({ cat:"scratchpad", label:"Snapshot current buffer", run:()=>{ closePalette(); document.getElementById("padSnapshot").click(); } });
+  cmds.push({ cat:"scratchpad", label:"Diff two buffers", run:()=>{ closePalette(); document.getElementById("padDiff").click(); } });
+
+  cfg.snippets.forEach((s) => cmds.push({
+    cat:"snippet", label:`Snippet: ${s.label}`, k:(s.tags||[]).join(", "),
+    run:()=>{ closePalette(); copySnippet(s); }
+  }));
+
+  Object.entries(cfg.engines).forEach(([key, eng]) => cmds.push({
+    cat:"search", label:`Default engine: ${eng.name}`,
+    run:()=>{ cfg.defaultEngine = key; save(); renderEngineSwitch(); renderBangHint(); closePalette(); toast("default: "+eng.name); }
+  }));
+
+  cmds.push({ cat:"ui", label:"Cycle theme", run:()=>{ closePalette(); document.getElementById("btnTheme").click(); } });
+  cmds.push({ cat:"data", label:"Export all config", run:()=>{ exportAll(); closePalette(); } });
+  cmds.push({ cat:"data", label:"Import config…", run:()=>{ closePalette(); importAll(); } });
+  cmds.push({ cat:"data", label:"Open secrets vault", run:()=>{ closePalette(); openVault(); } });
+  cmds.push({ cat:"data", label:"Clipboard history", run:()=>{ closePalette(); openClips(); } });
+  cmds.push({ cat:"data", label:"Manage plugins", run:()=>{ closePalette(); openPlugins(); } });
+  cmds.push({ cat:"data", label:"Reload plugins", run:()=>{ closePalette(); renderPlugins(); } });
+
+  cfg.ports.forEach(p => cmds.push({
+    cat:"port", label:`Open :${p.port} (${p.label})`, run:()=>{ window.open(`http://localhost:${p.port}`,"_blank"); closePalette(); }
+  }));
+  cfg.infra.forEach(item => cmds.push({
+    cat:"infra", label:`Open ${item.label}`, run:()=>{ window.open(item.url,"_blank"); closePalette(); }
+  }));
+  Object.entries(cfg.profiles).forEach(([key, p]) => cmds.push({
+    cat:"profile", label:`Profile: ${p.label}`,
+    run:()=>{ cfg.activeProfile = key; save(); applyTheme(); renderProfileSwitch(); renderPorts(); renderInfra(); renderSnipTags(); renderSnippets(); renderBangHint(); closePalette(); }
+  }));
+  (cfg.apiRequests || []).forEach(r => cmds.push({
+    cat:"api", label:`API: ${r.name} (${r.method})`,
+    run:()=>{ closePalette(); toolApi(); setTimeout(() => {
+      document.getElementById("apiMethod").value = r.method;
+      document.getElementById("apiUrl").value = r.url;
+      const hs = document.getElementById("apiHeaders"); hs.innerHTML = "";
+      (r.headers || []).forEach(h => {
+        const row = document.createElement("div"); row.className = "hrow";
+        row.innerHTML = `<input type="text" value="${escapeHtml(h.k)}"><input type="text" value="${escapeHtml(h.v)}"><button>✕</button>`;
+        row.querySelector("button").onclick = () => row.remove();
+        hs.appendChild(row);
+      });
+      document.getElementById("apiBody").value = r.body || "";
+    }, 20); }
+  }));
+  return cmds;
+}
+function openPalette() {
+  paletteCommands = buildCommands(); paletteInput.value = ""; paletteActive = 0;
+  paletteBackdrop.classList.add("open");
+  setTimeout(() => paletteInput.focus(), 0);
+  renderPalette("");
+}
+function closePalette() { paletteBackdrop.classList.remove("open"); }
+function renderPalette(q) {
+  const needle = q.trim().toLowerCase();
+  const list = !needle ? paletteCommands : paletteCommands
+    .map(c => ({ c, sc: fuzzyScore(needle, c.label) }))
+    .filter(x => x.sc > 0).sort((a,b) => b.sc - a.sc).map(x => x.c);
+  paletteList.innerHTML = "";
+  if (!list.length) {
+    paletteList.innerHTML = `<div class="palette-empty">no matching commands</div>`;
+    paletteList._list = [];
+    return;
+  }
+  if (paletteActive >= list.length) paletteActive = 0;
+  list.forEach((c, i) => {
+    const d = document.createElement("div");
+    d.className = "palette-item" + (i === paletteActive ? " active" : "");
+    d.dataset.cat = c.cat;
+    d.innerHTML = `
+      <span class="label">
+        <span class="cat-dot"></span>
+        <span>${escapeHtml(c.label)}</span>
+      </span>
+      ${c.k ? `<span class="k">${escapeHtml(c.k)}</span>` : `<span class="cat-label">${escapeHtml(c.cat)}</span>`}`;
+    d.onclick = () => c.run();
+    d.onmouseenter = () => { paletteActive = i; renderPalette(q); };
+    paletteList.appendChild(d);
+  });
+  paletteList._list = list;
+  // scroll active into view
+  const active = paletteList.querySelector(".palette-item.active");
+  if (active) active.scrollIntoView({ block: "nearest" });
+}
+paletteInput.addEventListener("input", () => { paletteActive = 0; renderPalette(paletteInput.value); });
+paletteInput.addEventListener("keydown", (e) => {
+  const list = paletteList._list || [];
+  if (e.key === "ArrowDown") { e.preventDefault(); paletteActive = Math.min(paletteActive+1, list.length-1); renderPalette(paletteInput.value); }
+  if (e.key === "ArrowUp")   { e.preventDefault(); paletteActive = Math.max(paletteActive-1, 0); renderPalette(paletteInput.value); }
+  if (e.key === "Enter" && list[paletteActive]) { e.preventDefault(); list[paletteActive].run(); }
+  if (e.key === "Escape") closePalette();
+});
+paletteBackdrop.addEventListener("click", e => { if (e.target === paletteBackdrop) closePalette(); });
+document.getElementById("btnPalette").onclick = openPalette;
+
+/* ============================================================
+   EXPORT / IMPORT
+   ============================================================ */
+function downloadBlob(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+function pickFile(cb) {
+  const inp = document.createElement("input"); inp.type = "file"; inp.accept = ".json,application/json";
+  inp.onchange = () => { const f = inp.files[0]; if (!f) return;
+    const r = new FileReader(); r.onload = () => cb(r.result); r.readAsText(f); };
+  inp.click();
+}
+function exportAll() {
+  const safe = structuredClone(cfg);
+  if (safe.vault) delete safe.vault;
+  if (safe.clips) safe.clips = [];
+  safe.lastExport = Date.now();
+  cfg.lastExport = Date.now(); save();
+  downloadBlob(new Blob([JSON.stringify(safe, null, 2)], { type: "application/json" }), "startpage.config.json");
+  toast("exported");
+  document.getElementById("backupNudge").style.display = "none";
+}
+function importAll() {
+  pickFile(text => {
+    try {
+      const data = JSON.parse(text);
+      const keepVault = cfg.vault;
+      cfg = { ...structuredClone(DEFAULTS), ...data };
+      if (keepVault) cfg.vault = keepVault;
+      save(); applyTheme();
+      renderProfileSwitch(); renderEngineSwitch(); renderPorts(); renderInfra(); renderPad();
+      renderSnipTags(); renderSnippets(); renderBangHint(); renderPlugins();
+      toast("imported");
+    } catch (e) { toast("import failed: " + e.message); }
+  });
+}
+document.getElementById("btnExportAll").onclick = exportAll;
+document.getElementById("btnImportAll").onclick = importAll;
+document.getElementById("btnReset").onclick = () => {
+  if (!confirm("Reset all config to defaults? This cannot be undone.")) return;
+  localStorage.removeItem(LS_KEY); location.reload();
+};
+document.getElementById("btnBackupNow").onclick = exportAll;
+function checkBackupNudge() {
+  const days = (Date.now() - (cfg.lastExport || 0)) / 86400000;
+  if (days > 14 && Object.keys(cfg.pads.buffers).length + cfg.snippets.length > 3) {
+    document.getElementById("backupNudge").style.display = "";
+  }
+}
+
+/* ============================================================
+   VAULT
+   ============================================================ */
+let vaultUnlocked = null;
+let vaultTimer = null;
+function lockVault() {
+  vaultUnlocked = null;
+  document.getElementById("vaultBadge").style.display = "none";
+  if (vaultTimer) { clearTimeout(vaultTimer); vaultTimer = null; }
+}
+function resetIdleTimer() {
+  if (!vaultUnlocked) return;
+  if (vaultTimer) clearTimeout(vaultTimer);
+  vaultTimer = setTimeout(() => { lockVault(); toast("vault auto-locked"); }, (cfg.vaultAutoLockMin || 10) * 60000);
+}
+["mousemove","keydown","click","scroll"].forEach(ev => document.addEventListener(ev, resetIdleTimer, { passive: true }));
+
+async function deriveKey(pass, salt) {
+  const enc = new TextEncoder();
+  const base = await crypto.subtle.importKey("raw", enc.encode(pass), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name:"PBKDF2", salt, iterations:200000, hash:"SHA-256" },
+    base, { name:"AES-GCM", length:256 }, false, ["encrypt","decrypt"]);
+}
+async function vaultEncrypt(pass, plaintext) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(pass, salt);
+  const ct = await crypto.subtle.encrypt({ name:"AES-GCM", iv }, key, new TextEncoder().encode(plaintext));
+  return { salt: b64uEnc(salt), iv: b64uEnc(iv), ct: b64uEnc(new Uint8Array(ct)) };
+}
+async function vaultDecrypt(pass, v) {
+  const salt = b64uDec(v.salt), iv = b64uDec(v.iv), ct = b64uDec(v.ct);
+  const key = await deriveKey(pass, salt);
+  const pt = await crypto.subtle.decrypt({ name:"AES-GCM", iv }, key, ct);
+  return new TextDecoder().decode(pt);
+}
+function b64uEnc(bytes) { let s = ""; bytes.forEach(b => s += String.fromCharCode(b)); return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }
+function b64uDec(str) { str = str.replace(/-/g,"+").replace(/_/g,"/"); while (str.length%4) str += "="; const bin = atob(str); const out = new Uint8Array(bin.length); for (let i=0;i<bin.length;i++) out[i]=bin.charCodeAt(i); return out; }
+function openVault() {
+  if (vaultUnlocked) return renderVaultContents();
+  const has = !!cfg.vault;
+  openModal("Secrets Vault", `
+    <p class="hint-text">AES-GCM · PBKDF2-SHA256 (200k iter). Auto-locks after ${cfg.vaultAutoLockMin||10} min idle.</p>
+    <div class="field"><label>Passphrase</label><input type="password" id="vaultPass" /></div>
+    ${has ? `<div class="row"><button id="vaultUnlock">Unlock</button></div>` :
+      `<div class="field"><label>Initial secrets (JSON or text)</label><textarea id="vaultInit" rows="8" placeholder='{"GITHUB_TOKEN":"ghp_..."}'></textarea></div>
+       <div class="row"><button id="vaultCreate">Create vault</button></div>`}
+    <div class="out" id="vaultOut"></div>`);
+  const $pass = document.getElementById("vaultPass");
+  const $out = document.getElementById("vaultOut");
+  if (has) {
+    document.getElementById("vaultUnlock").onclick = async () => {
+      try {
+        vaultUnlocked = await vaultDecrypt($pass.value, cfg.vault);
+        document.getElementById("vaultBadge").style.display = "";
+        resetIdleTimer(); renderVaultContents();
+      } catch { $out.classList.add("err"); $out.textContent = "✗ wrong passphrase or corrupt vault"; }
+    };
+  } else {
+    document.getElementById("vaultCreate").onclick = async () => {
+      const pass = $pass.value; const plain = document.getElementById("vaultInit").value;
+      if (!pass) { toast("set a passphrase"); return; }
+      try { cfg.vault = await vaultEncrypt(pass, plain); save(); vaultUnlocked = plain;
+        document.getElementById("vaultBadge").style.display = ""; resetIdleTimer(); renderVaultContents();
+      } catch (e) { $out.classList.add("err"); $out.textContent = "✗ " + e.message; }
+    };
+  }
+  $pass.focus();
+}
+function renderVaultContents() {
+  const exp = cfg.vaultExpiry || {};
+  const near = Object.entries(exp).filter(([_, d]) => {
+    const days = (new Date(d).getTime() - Date.now()) / 86400000;
+    return days < 7;
+  });
+  openModal("Secrets Vault (unlocked)", `
+    ${near.length ? `<p style="color:var(--red);font-size:12px;margin-top:0">⚠ ${near.length} secret(s) expiring soon</p>` : ""}
+    <div class="field"><label>Plaintext (edit + Save to re-encrypt)</label>
+      <textarea id="vaultBody" rows="14" spellcheck="false">${escapeHtml(vaultUnlocked)}</textarea>
+    </div>
+    <div class="row">
+      <button id="vaultSave">Save &amp; re-encrypt</button>
+      <button id="vaultLock" class="ghost">Lock now</button>
+    </div>
+    <p class="hint-text" style="margin-top:14px;font-size:12px">Tip: one secret per line as <code>KEY=value</code>, or paste JSON.</p>`);
+  document.getElementById("vaultSave").onclick = async () => {
+    const pass = prompt("Re-enter passphrase to save:");
+    if (!pass) return;
+    try {
+      vaultUnlocked = document.getElementById("vaultBody").value;
+      cfg.vault = await vaultEncrypt(pass, vaultUnlocked);
+      save(); toast("vault updated"); resetIdleTimer();
+    } catch (e) { toast("save failed: " + e.message); }
+  };
+  document.getElementById("vaultLock").onclick = () => { lockVault(); closeModal(); toast("vault locked"); };
+}
+document.getElementById("btnVault").onclick = openVault;
+
+/* ============================================================
+   PWA
+   ============================================================ */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+
+/* ============================================================
+   STORAGE CONFLICT
+   ============================================================ */
+window.addEventListener("storage", (e) => {
+  if (e.key !== LS_KEY) return;
+  toast("config changed in another tab", { label: "reload", run: () => location.reload() });
+});
+
+/* ============================================================
+   SUMMON PAD
+   ============================================================ */
+function summonPad() {
+  const area = document.getElementById("padArea");
+  area.scrollIntoView({ behavior: "smooth", block: "center" });
+  setTimeout(() => area.focus(), 200);
+}
+
+/* ============================================================
+   KEYBOARD
+   ============================================================ */
+document.addEventListener("keydown", (e) => {
+  const mod = e.metaKey || e.ctrlKey;
+  if (!mod) return;
+  const k = e.key.toLowerCase();
+  if (k === "p" && !e.shiftKey) { e.preventDefault(); openPalette(); return; }
+  if (k === "k") { e.preventDefault(); omni.focus(); omni.select(); return; }
+  if (k === "s" && e.shiftKey) { e.preventDefault(); summonPad(); return; }
+  const inInput = ["INPUT","TEXTAREA"].includes(document.activeElement?.tagName);
+  const modalOpen = modal.classList.contains("open");
+  if (inInput && !modalOpen) return;
+  if (k === "j") { e.preventDefault(); openTool("json"); }
+  if (k === "b") { e.preventDefault(); openTool("b64"); }
+  if (k === "u") { e.preventDefault(); openTool("jwt"); }
+  if (k === "t") { e.preventDefault(); openTool("ts"); }
+  if (k === "r") { e.preventDefault(); openTool("regex"); }
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "/" && !["INPUT","TEXTAREA"].includes(document.activeElement?.tagName) && !modal.classList.contains("open")) {
+    e.preventDefault(); snipFilterEl.focus();
+  }
+});
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+applyTheme();
+renderProfileSwitch();
+renderEngineSwitch();
+renderPorts();
+renderInfra();
+renderPad();
+renderSnipTags();
+renderSnippets();
+renderBangHint();
+renderPlugins();
+checkBackupNudge();
+
+if (cfg.firstRun) {
+  setTimeout(() => {
+    toast("press ⌘P to see everything", { label: "got it", run: () => {} });
+    cfg.firstRun = false; save();
+  }, 800);
+}
+</script>
+</body>
+</html>
