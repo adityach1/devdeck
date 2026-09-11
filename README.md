@@ -1,13 +1,12 @@
-# 🚀 Startpage
+# 🚀 DevDeck
 
-> A fast, privacy-focused, zero-dependency developer startpage and dashboard designed for productivity. Fully responsive, offline-ready (PWA), and packed with built-in developer tools.
+> A fast, privacy-focused, zero-dependency developer startpage and flight deck designed for daily productivity. Fully responsive, offline-ready (PWA), and packed with built-in developer tools.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Deployed on Cloudflare Pages](https://img.shields.io/badge/Deployed%20on-Cloudflare%20Pages-F38020?logo=cloudflare&logoColor=white)](https://pages.cloudflare.com/)
 [![PWA Ready](https://img.shields.io/badge/PWA-Ready-green.svg)](manifest.webmanifest)
 [![Vanilla JS](https://img.shields.io/badge/Vanilla-JS-yellow.svg)](index.html)
 [![Zero Dependencies](https://img.shields.io/badge/Dependencies-0-success.svg)](index.html)
-
-🌐 **Live Demo:** [adityach1.github.io](https://adityach1.github.io)
 
 ---
 
@@ -25,7 +24,9 @@
 - [Encrypted Secrets Vault](#-encrypted-secrets-vault)
 - [Keyboard Shortcuts](#-keyboard-shortcuts)
 - [Customization](#-customization)
-- [Installation & Deployment](#-installation--deployment)
+- [Cloudflare Pages Deployment](#-cloudflare-pages-deployment)
+- [Local Development](#-local-development)
+- [Browser New Tab Setup](#-browser-new-tab-setup)
 - [Privacy & Security](#-privacy--security)
 - [License](#-license)
 
@@ -33,15 +34,15 @@
 
 ## ✨ Features
 
-- ⚡ **Zero External Dependencies** — Single-file architecture powered by standard Web APIs and Web Crypto.
-- 📱 **Fully Responsive Layout** — Optimized to comfortably utilize 90%–95% of your screen width across ultra-wide monitors, laptops, tablets, and phones.
-- 🔍 **Power Omnibar** — Instant search, engine switching, 20+ bang shortcuts, live math evaluation, unit converter, and developer quick-commands.
-- 🎛️ **Modular Widget Dashboard** — Real-time weather, clock, speed dial, browser diagnostics, crypto tickers, RSS, countdowns, and Pomodoro timers.
-- 🔐 **Encrypted Secrets Vault** — Client-side AES-256-GCM + PBKDF2 encrypted `.env` and API token manager with session caching and auto-lock.
-- 🛠️ **Full Developer Toolbox** — DNS over HTTPS (DoH), cURL builder, Cron calculator, Keygen, Base64, Hashes, JWT decoder, JSON formatter, QR code generator, and regex tester.
-- 📝 **Scratchpad & Notes** — Multi-buffer editor with live split Markdown preview and interactive task checklists.
+- ⚡ **Zero External Dependencies** — Single-file architecture powered exclusively by native Web APIs and Web Crypto.
+- 📱 **Fully Responsive Viewport** — Fills 90%–95% of screen width comfortably across ultrawide displays, laptops, tablets, and smartphones.
+- 🔍 **Power Omnibar** — Multi-engine search switching, 20+ direct bang shortcuts, safe math evaluation, unit/currency conversions, and quick dev commands.
+- 🎛️ **Modular Widget Dashboard** — Live weather (New Delhi), clock, speed dial bookmarks, browser & system diagnostics, crypto tickers, RSS, countdowns, and Pomodoro focus timers.
+- 🔐 **Encrypted Secrets Vault** — Client-side AES-256-GCM + PBKDF2 encrypted secret store & `.env` manager with memory session caching and auto-lock.
+- 🛠️ **Developer Toolbox** — DNS over HTTPS (DoH), cURL builder, Cron parser & upcoming runs calculator, Cryptographic Keygen, Base64, Hashes, JWT inspector, JSON formatter, and regex tester.
+- 📝 **Scratchpad & Notes** — Multi-buffer notes manager with live split Markdown preview and interactive checklists.
 - 🌐 **REST API Tester** — In-browser HTTP client with header management, status code badges, response timing, and history.
-- 🎨 **Deep Customization** — 10 accent themes, light/dark mode, and Unsplash/custom wallpaper support with brightness and blur sliders.
+- 🎨 **Deep Customization** — 10 accent themes, light/dark mode, and Unsplash or custom wallpapers with brightness and blur sliders.
 - 📴 **Offline PWA Support** — Service Worker caching allows instant loading even without an active internet connection.
 
 ---
@@ -68,7 +69,7 @@ Prefix your query with `?<engine>` to search with a specific engine:
 
 ### Bangs (`!bang`)
 
-Jump directly to external developer platforms:
+Jump directly to developer hubs and documentation:
 
 | Bang | Destination | Bang | Destination |
 | :--- | :--- | :--- | :--- |
@@ -85,26 +86,26 @@ Jump directly to external developer platforms:
 
 Type formulas and quick commands directly into the Omnibar:
 
-- **Math & Conversions:**
+- **Safe Math & Conversions:**
   - `42 * 1024` → Calculates result with 1-click copy
-  - `sqrt(256) + 10` → Math evaluation
-  - `100 USD in EUR` or `50 kg in lbs` → Unit & currency conversions
+  - `sqrt(256) + 10` → Math evaluation via safe recursive-descent parser (zero `eval`)
+  - `100 USD in EUR` or `50 kg in lbs` → Instant unit & currency conversions
 - **Developer Quick Commands:**
-  - `dns google.com` → Instant DoH DNS lookup
+  - `dns google.com` → Instant DoH DNS lookup (Cloudflare / Google)
   - `b64 hello world` → Base64 encoder/decoder
-  - `hash mypassword` → Generates SHA-256 hash
-  - `keygen 32` → Generates secure random key/token
-  - `uuid` → Generates standard UUID v4
+  - `hash mypassword` → Generates SHA-256 digest
+  - `keygen 32` → Generates cryptographically secure token/key
+  - `uuid` → Generates RFC-compliant UUID v4
   - `ts` or `ts 1700000000` → Epoch timestamp converter
-  - `cron 0 12 * * *` → Cron expression parser
-  - `curl https://api.github.com` → cURL test launcher
+  - `cron 0 12 * * *` → Cron expression parser & next runs
+  - `curl https://api.github.com` → cURL test runner
   - `v <key>` or `vault <query>` → Search & copy decrypted vault secret (when unlocked)
 
 ---
 
 ## 🎛️ Widgets System
 
-The widget dashboard automatically organizes your view with zero setup.
+The widget dashboard automatically organizes your view with zero configuration.
 
 ### Default Widgets
 
@@ -123,12 +124,12 @@ Click the **`＋` Add Widget** button in the dashboard header to add any of thes
 - **🐙 GitHub Activity** — Recent pushes, repositories, and follower stats (supports personal access tokens).
 - **₿ Crypto Prices** — Live CoinGecko price tickers (BTC, ETH, SOL, etc.) in USD, EUR, INR, GBP, or JPY.
 - **📰 Hacker News** — Live top stories with score and comment counts.
-- **📡 RSS Feed** — Custom feed reader (TechCrunch, GitHub releases, blogs).
+- **📡 RSS Feed** — Custom feed reader (TechCrunch, GitHub releases, engineering blogs).
 - **⏳ Countdown** — Milestone & release countdown timer.
 - **🍅 Pomodoro Focus** — 25/5 interval timer with audio chimes and cycle counters.
-- **📝 Quick Notes** — Instant scratch area auto-saved independently.
+- **📝 Quick Notes** — Instant scratchpad auto-saved independently.
 - **🔌 JSON Endpoint** — Periodic polling and display of custom JSON APIs.
-- **🧩 Custom JS Plugins** — Run arbitrary sandbox functions to render custom content.
+- **🧩 Custom JS Plugins** — Run sandboxed functions in an isolated iframe.
 
 ---
 
@@ -139,9 +140,9 @@ Access the comprehensive developer suite from the top navigation bar or keyboard
 1. **DNS over HTTPS (DoH) Lookup (`Alt+T` → DNS)**
    - Query `A`, `AAAA`, `MX`, `TXT`, `CNAME`, `NS`, `SOA`, and `PTR` records via Cloudflare (`1.1.1.1`) or Google (`8.8.8.8`).
 2. **cURL Command Builder (`Alt+T` → cURL)**
-   - Interactive UI to construct cURL requests with custom headers, HTTP methods, authorization tokens, and request bodies.
+   - Construct cURL requests with custom headers, HTTP methods, authorization tokens, and request bodies.
 3. **Cron Expression Explainer (`Alt+T` → Cron)**
-   - Human-readable cron schedule descriptions and upcoming 5 execution timestamps.
+   - Human-readable cron schedule descriptions and upcoming execution timestamps.
 4. **Cryptographic Key & Token Generator (`Alt+T` → Keygen)**
    - Cryptographically strong random keys, API tokens, hex strings, Base64 tokens, and passwords with custom lengths and character sets.
 5. **JSON Formatter & Validator**
@@ -165,7 +166,7 @@ Access the comprehensive developer suite from the top navigation bar or keyboard
 
 ## 🔐 Encrypted Secrets Vault
 
-The Secrets Vault allows you to safely store sensitive API keys, tokens, and credentials right inside your startpage.
+DevDeck includes a built-in developer secrets vault:
 
 - **Encryption Standard:** `AES-256-GCM` with key derivation using `PBKDF2-SHA256` (100,000 iterations and cryptographically random salt/IV).
 - **Memory-Only Session:** Passphrase is kept in runtime memory only while unlocked. Plaintext secrets are never stored to `localStorage` unencrypted.
@@ -198,7 +199,7 @@ The Secrets Vault allows you to safely store sensitive API keys, tokens, and cre
 Click the **⚙️ Settings** icon in the header or press `Alt + C`:
 
 - **Theme Mode:** Dark mode, Light mode, or follow System OS preference.
-- **Accent Colors:** Choose from Cyber Blue, Emerald, Amber, Purple, Rose, Cyan, Orange, Pink, Teal, or Indigo.
+- **Accent Colors:** Cyber Blue, Emerald, Amber, Purple, Rose, Cyan, Orange, Pink, Teal, or Indigo.
 - **Custom Wallpapers:**
   - Dynamic Unsplash curated backgrounds (Minimal, Technology, Architecture, Dark, Nature, Space).
   - Custom image URLs.
@@ -209,43 +210,78 @@ Click the **⚙️ Settings** icon in the header or press `Alt + C`:
 
 ---
 
-## 💻 Installation & Deployment
+## ☁️ Cloudflare Pages Deployment
 
-### Run Locally
-Since Startpage is completely client-side and requires zero build steps, you can run it immediately:
+DevDeck is designed to be hosted for free on Cloudflare Pages with zero build configuration.
+
+### Option A: Automatic Deployment via Git (Recommended)
+
+1. **Commit and push your code to GitHub:**
+   ```bash
+   git add .
+   git commit -m "Deploy DevDeck"
+   git push origin main
+   ```
+2. Log into the [Cloudflare Dashboard](https://dash.cloudflare.com/).
+3. Navigate to **Compute (Workers & Pages)** → **Create application** → **Pages** → **Connect to Git**.
+4. Select your repository (`adityach1.github.io`).
+5. Set the build configuration:
+   * **Framework preset:** `None`
+   * **Build command:** *(leave blank)*
+   * **Build output directory:** `.`
+6. Click **Save and Deploy**. Your site will be live at `https://<project-name>.pages.dev` with automatic edge deployments on every git push.
+
+### Option B: Direct CLI Deployment with Wrangler
+
+1. **Authenticate Wrangler:**
+   ```bash
+   npx wrangler login
+   ```
+2. **Deploy directly from the project directory:**
+   ```bash
+   npx wrangler pages deploy . --project-name=devdeck
+   ```
+3. Cloudflare will upload the assets and output your live deployment URL immediately.
+
+---
+
+## 💻 Local Development
+
+Because DevDeck requires zero build steps or bundlers, you can run it locally with any static HTTP server:
 
 ```bash
 # Clone the repository
 git clone https://github.com/adityach1/adityach1.github.io.git
 cd adityach1.github.io
 
-# Serve using any static server (or open index.html directly)
+# Using Python:
 python3 -m http.server 8080
-# or with Node.js:
+
+# Or using Node.js:
 npx serve .
 ```
 
-Open your browser at `http://localhost:8080`.
+Open `http://localhost:8080` in your browser.
 
-### Deploy to GitHub Pages
-1. Fork or push this repository to GitHub as `<username>.github.io`.
-2. Go to **Settings** → **Pages** → Source: **Deploy from a branch** → Branch: `main` / `root`.
-3. Your startpage will be live at `https://<username>.github.io`.
+---
 
-### Set as Browser New Tab
-- **Firefox:** Use an extension like [New Tab Override](https://addons.mozilla.org/firefox/addon/new-tab-override/) and set URL to your deployed startpage or local server.
-- **Chrome / Edge / Brave:** Use [Custom New Tab URL](https://chromewebstore.google.com/) or install as a PWA and set as homepage.
+## 🌐 Browser New Tab Setup
+
+To use DevDeck as your default browser new tab:
+
+- **Firefox:** Install [New Tab Override](https://addons.mozilla.org/firefox/addon/new-tab-override/) and set the URL to your deployed Cloudflare Pages address (or `http://localhost:8080`).
+- **Chrome / Brave / Edge:** Use an extension like [Custom New Tab URL](https://chromewebstore.google.com/) pointing to your URL, or install DevDeck as a desktop PWA (click the Install icon in the address bar) and set it as your browser startup page.
 
 ---
 
 ## 🛡️ Privacy & Security
 
-- **No Tracking or Telemetry:** No analytics scripts, tracking pixels, or third-party user monitoring.
-- **Local Storage:** All configuration, scratchpad buffers, and history are stored directly in your browser's `localStorage` and `IndexedDB`.
+- **No Tracking or Analytics:** No third-party telemetry, analytics scripts, or cookies.
+- **Client-Side Data Storage:** All preferences, notes, and local caches are stored on your device via `localStorage` and `IndexedDB`.
 - **Client-Side Cryptography:** Vault encryption and decryption occur entirely within your local browser engine via the standard `window.crypto.subtle` API.
 
 ---
 
 ## 📄 License
 
-Distributed under the [MIT License](LICENSE). Feel free to use, modify, and distribute as you like!
+Distributed under the [MIT License](LICENSE). Feel free to use, modify, and distribute!

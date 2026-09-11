@@ -1,6 +1,6 @@
 {
-  "name": "Startpage",
-  "short_name": "Start",
+  "name": "DevDeck",
+  "short_name": "DevDeck",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0e0f12",
