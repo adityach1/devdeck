@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
 <meta name="theme-color" content="#0b0c0f" />
 <link rel="manifest" href="manifest.webmanifest" />
 <title>DevDeck</title>
@@ -81,8 +81,8 @@
     padding: 24px clamp(12px, 1.8vw, 36px) max(60px, env(safe-area-inset-bottom, 24px));
     transition: width .2s var(--ease);
   }
-  header.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
-  .brand { display: flex; align-items: center; gap: 12px; }
+  header.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
   .brand-mark {
     width: 30px; height: 30px; border-radius: 8px;
     background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, var(--purple)));
@@ -92,8 +92,7 @@
   }
   .brand-text { font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-2); }
   .hstack { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-  .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .header-switches { display: flex; align-items: center; gap: 6px; }
+  .header-switches { display: flex; align-items: center; gap: 8px; margin-left: auto; }
   .header-actions { display: flex; align-items: center; gap: 4px; }
 
   .btn {
@@ -1381,43 +1380,54 @@
     .card h2 .actions { flex-wrap: wrap; gap: 4px; }
   }
 
-  /* 3. Portrait Tablets & Mobile (<= 768px) */
+  /* 3. Mobile & Tablets (<= 768px) */
   @media (max-width: 768px) {
-    .wrap { width: 96%; padding: 16px 14px max(50px, env(safe-area-inset-bottom, 24px)); }
+    .wrap {
+      width: 100% !important;
+      max-width: 100vw !important;
+      box-sizing: border-box !important;
+      padding: 12px 10px max(44px, env(safe-area-inset-bottom, 20px)) !important;
+    }
     
     /* Header layout: Brand + Actions on row 1, Switches on row 2 */
     header.top {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 18px;
+      display: grid !important;
+      grid-template-columns: 1fr auto !important;
+      grid-template-areas:
+        "brand actions"
+        "switches switches" !important;
+      gap: 10px !important;
+      margin-bottom: 14px !important;
     }
-    .brand { flex: 0 0 auto; }
-    .header-right {
-      flex: 1 1 auto;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 8px;
-    }
+    .brand { grid-area: brand; align-self: center; }
+    .brand-mark { width: 28px; height: 28px; font-size: 13px; }
+    .brand-text { font-size: 12px; font-weight: 700; }
+    
     .header-actions {
-      order: 1;
+      grid-area: actions;
+      align-self: center;
+      justify-self: end;
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
     }
+    .header-actions .icon-btn {
+      padding: 6px 8px;
+      min-height: 36px;
+      min-width: 36px;
+      font-size: 14px;
+    }
+    
     .header-switches {
-      order: 2;
+      grid-area: switches;
       width: 100%;
       display: flex;
       overflow-x: auto;
       scrollbar-width: none;
       -webkit-overflow-scrolling: touch;
-      gap: 8px;
-      padding: 2px 0 4px;
+      gap: 6px;
+      margin: 0;
+      padding: 2px 0 6px;
     }
     .header-switches::-webkit-scrollbar { display: none; }
     #profileSwitch, #engineSwitch {
@@ -1429,65 +1439,26 @@
     #profileSwitch .icon-btn, #engineSwitch .icon-btn {
       flex-shrink: 0;
       white-space: nowrap;
-      padding: 5px 9px;
+      padding: 6px 10px;
       font-size: 11.5px;
+      min-height: 32px;
+      background: var(--panel);
+      border: 1px solid var(--border);
     }
-
-    /* Widgets */
-    .widgets-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-    .widget.wide { grid-column: span 1 !important; }
-    .w-sys { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-
-    /* Tools & Panels */
-    .diff-grid { grid-template-columns: 1fr; }
-    .pad-tabs {
-      display: flex;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      scrollbar-width: none;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 2px;
+    #profileSwitch .icon-btn.active, #engineSwitch .icon-btn.active {
+      background: var(--panel-2);
+      border-color: var(--accent);
     }
-    .pad-tabs::-webkit-scrollbar { display: none; }
-    .pad-tab { flex-shrink: 0; }
-    .tag-row {
-      display: flex;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      scrollbar-width: none;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 2px;
-    }
-    .tag-row::-webkit-scrollbar { display: none; }
-    .tag { flex-shrink: 0; }
-
-    /* Modals */
-    .modal { max-height: 94vh; max-height: 94dvh; border-radius: var(--radius); }
-    .modal.wide { max-width: 100%; }
-    .modal-backdrop { padding: 12px; }
-    .modal .body { padding: 16px 14px; }
-    /* Prevent iOS Safari auto-zoom on input focus */
-    .modal input, .modal select, .modal textarea, #omni, #paletteInput {
-      font-size: 16px !important;
-    }
-  }
-
-  /* 4. Smartphones (<= 480px) */
-  @media (max-width: 480px) {
-    .wrap { width: 100%; padding: 12px 10px max(44px, env(safe-area-inset-bottom, 20px)); }
-    
-    /* Header */
-    .brand-mark { width: 28px; height: 28px; font-size: 13px; }
-    .brand-text { font-size: 11px; }
-    .icon-btn { padding: 6px 8px; min-height: 36px; min-width: 36px; }
 
     /* Omnibar */
     .omni { margin-bottom: 16px; border-radius: var(--radius); }
-    .omni-inner { padding: 10px 12px; gap: 8px; }
+    .omni-inner { padding: 10px 14px; gap: 8px; }
     .omni-icon svg { width: 16px; height: 16px; }
-    .omni-pill { display: none; }
-    .omni-dropdown { max-height: 55vh; border-radius: var(--radius); }
-    .omni-item { padding: 10px 12px; }
+    .omni input { font-size: 16px !important; }
+    .omni-pill { display: none !important; }
+    .omni-dropdown { max-height: 50vh; border-radius: var(--radius); }
+    .omni-item { padding: 11px 12px; gap: 8px; }
+    .omni-item-text .sub { font-size: 10px; display: block; margin-left: 0; margin-top: 2px; }
     .hint {
       display: flex;
       flex-wrap: nowrap;
@@ -1495,71 +1466,207 @@
       scrollbar-width: none;
       -webkit-overflow-scrolling: touch;
       padding-bottom: 4px;
+      gap: 5px;
     }
     .hint::-webkit-scrollbar { display: none; }
-    .hint span.chip { flex-shrink: 0; }
+    .hint span.chip { flex-shrink: 0; font-size: 10.5px; padding: 3px 8px; }
 
-    /* Widgets: Clean single column on mobile */
-    .widgets-grid { grid-template-columns: 1fr; gap: 10px; }
-    .widget { padding: 14px; min-height: auto; }
+    /* Widgets Grid */
+    .widgets-grid {
+      grid-template-columns: 1fr !important;
+      gap: 12px;
+    }
+    .widget { padding: 14px 12px; min-height: auto; }
+    .widget.wide { grid-column: span 1 !important; }
     .card { padding: 14px 12px; }
-    .w-clock .time { font-size: 30px; }
-    .w-weather { gap: 10px; }
-    .w-weather .temp { font-size: 30px; }
-    .w-weather .ico-big { font-size: 28px; }
-    .w-bookmarks { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; }
-    .w-bm-item { padding: 6px 2px; }
-    .w-bm-title { font-size: 10px; }
-    .w-sys { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    
+    /* Widget internals */
+    .w-clock .time { font-size: clamp(28px, 8vw, 36px); }
+    .w-weather { gap: 12px; }
+    .w-weather .temp { font-size: clamp(28px, 8vw, 36px); }
+    .w-weather .ico-big { font-size: clamp(28px, 8vw, 36px); }
+    .w-bookmarks {
+      grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+      gap: 6px;
+    }
+    .w-bm-item { padding: 8px 3px; min-width: 0; }
+    .w-bm-icon { width: 32px; height: 32px; }
+    .w-bm-title {
+      font-size: 10.5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+      text-align: center;
+    }
+    .w-sys {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px 10px;
+    }
+    .w-sys .stat { min-width: 0; overflow: hidden; }
+    .w-sys .stat .val { font-size: 11px; word-break: break-all; }
 
     /* Quick Tools */
-    .tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-    .tool-btn { padding: 8px 4px; font-size: 11px; justify-content: center; text-align: center; }
-    .tool-btn kbd { display: none; }
-    .tool-btn .ico { font-size: 12px; }
+    .tools {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)) !important;
+      gap: 6px !important;
+    }
+    .tool-btn {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 8px 4px !important;
+      font-size: 11px !important;
+      text-align: center !important;
+      gap: 3px !important;
+    }
+    .tool-btn kbd { display: none !important; }
+    .tool-btn .ico { font-size: 14px; }
+
+    /* Local Ports */
+    .ports {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+      gap: 6px !important;
+    }
+    .port {
+      padding: 7px 10px !important;
+      font-size: 11px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      min-width: 0 !important;
+    }
+    .port .spark { display: none !important; }
 
     /* Scratchpad */
-    .card[data-widget="scratch"] h2 { flex-direction: column; align-items: flex-start; gap: 8px; }
-    .card[data-widget="scratch"] h2 .actions { width: 100%; justify-content: flex-start; }
-    .card[data-widget="scratch"] h2 .actions .btn { flex: 1 1 auto; justify-content: center; padding: 5px 6px; font-size: 10.5px; }
-    .pad-area, .pad-hl, .pad-preview { min-height: 160px; max-height: 260px; font-size: 13px; }
+    .card[data-widget="scratch"] h2 {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 8px !important;
+    }
+    .card[data-widget="scratch"] h2 .title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+    .card[data-widget="scratch"] h2 .actions {
+      display: flex !important;
+      overflow-x: auto !important;
+      gap: 4px !important;
+      padding-bottom: 2px !important;
+      scrollbar-width: none !important;
+      -webkit-overflow-scrolling: touch !important;
+      width: 100% !important;
+    }
+    .card[data-widget="scratch"] h2 .actions::-webkit-scrollbar { display: none; }
+    .card[data-widget="scratch"] h2 .actions .btn {
+      flex-shrink: 0 !important;
+      padding: 5px 8px !important;
+      font-size: 10.5px !important;
+      min-height: 30px;
+    }
+    .pad-tabs {
+      display: flex !important;
+      overflow-x: auto !important;
+      gap: 4px !important;
+      flex-wrap: nowrap !important;
+      scrollbar-width: none !important;
+      -webkit-overflow-scrolling: touch !important;
+      padding-bottom: 2px !important;
+    }
+    .pad-tabs::-webkit-scrollbar { display: none; }
+    .pad-tab { flex-shrink: 0 !important; }
+    .pad-area, .pad-hl, .pad-preview {
+      min-height: 160px;
+      max-height: 260px;
+      font-size: 14px;
+    }
 
-    /* Ports */
-    .ports { gap: 6px; }
-    .port { padding: 6px 10px; font-size: 11px; flex: 1 1 calc(50% - 6px); justify-content: space-between; }
-    .profile-row { gap: 4px; }
-    .profile-chip { padding: 3px 8px; font-size: 11px; }
+    /* Row 2: Infra & Snippets */
+    .infra {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
+      gap: 6px !important;
+    }
+    .infra a { padding: 8px 10px; font-size: 11px; }
+    .tag-row {
+      display: flex !important;
+      overflow-x: auto !important;
+      flex-wrap: nowrap !important;
+      scrollbar-width: none !important;
+      -webkit-overflow-scrolling: touch !important;
+      padding-bottom: 2px !important;
+    }
+    .tag-row::-webkit-scrollbar { display: none; }
+    .tag { flex-shrink: 0 !important; }
 
-    /* Vault */
-    .vault-toolbar { flex-direction: column; align-items: stretch; gap: 8px; }
-    .vault-toolbar button { width: 100%; justify-content: center; min-height: 38px; }
-    .vault-search { width: 100%; }
-    .vault-cat-row { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
-    .vault-cat-btn { flex-shrink: 0; padding: 4px 10px; }
-    .vault-item-head { flex-wrap: wrap; gap: 4px; }
-    .vault-item-key { font-size: 12px; word-break: break-all; }
-    .vault-item-actions { margin-top: 2px; }
-    .vault-item-actions button { min-height: 32px; padding: 4px 10px; }
-    .vault-stat-bar { flex-direction: column; align-items: stretch; gap: 8px; text-align: center; }
-    .vault-stat-bar button { width: 100%; }
-
-    /* Command Palette */
-    .palette-backdrop { padding: max(16px, env(safe-area-inset-top, 16px)) 10px 10px; }
-    .palette-input-wrap { padding: 12px 14px; gap: 8px; }
-    .palette-item { padding: 9px 10px; font-size: 12.5px; }
-    .palette-item .cat-label { display: none; }
-
-    /* Modals & API */
-    .api-req { flex-direction: column; gap: 6px; }
-    .api-req select { width: 100%; }
-    .api-headers .hrow { flex-wrap: wrap; gap: 4px; }
-    .api-headers .hrow input { min-width: 100%; }
+    /* Modals & Tools */
+    .modal-backdrop { padding: 8px !important; align-items: center !important; }
+    .modal {
+      width: 100% !important;
+      max-width: 100% !important;
+      max-height: 92vh !important;
+      max-height: 92dvh !important;
+      border-radius: var(--radius) !important;
+    }
+    .modal header { padding: 12px 14px; }
+    .modal header button.close { min-width: 36px; min-height: 36px; font-size: 18px; }
+    .modal .body { padding: 14px 12px; }
+    .modal input, .modal select, .modal textarea, #omni, #paletteInput {
+      font-size: 16px !important; /* Prevents iOS Safari auto-zoom */
+    }
+    .diff-grid { grid-template-columns: 1fr !important; }
     .modal .row { gap: 6px; }
     .modal .row button { flex: 1 1 calc(50% - 6px); justify-content: center; min-height: 38px; }
 
+    /* Vault inside modal */
+    .vault-toolbar {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 8px !important;
+    }
+    .vault-toolbar button { width: 100% !important; justify-content: center !important; min-height: 38px; }
+    .vault-search { width: 100% !important; }
+    .vault-cat-row {
+      display: flex !important;
+      overflow-x: auto !important;
+      flex-wrap: nowrap !important;
+      scrollbar-width: none !important;
+      -webkit-overflow-scrolling: touch !important;
+      padding-bottom: 4px !important;
+      gap: 4px !important;
+    }
+    .vault-cat-row::-webkit-scrollbar { display: none; }
+    .vault-cat-btn { flex-shrink: 0 !important; padding: 5px 10px !important; }
+    .vault-item-head { flex-wrap: wrap !important; gap: 4px !important; }
+    .vault-item-key { font-size: 12px; word-break: break-all; }
+    .vault-item-actions button { min-height: 32px; padding: 4px 8px; }
+    .vault-stat-bar { flex-direction: column !important; gap: 8px !important; text-align: center; }
+    .vault-stat-bar button { width: 100% !important; }
+
+    /* Command Palette */
+    .palette-backdrop { padding: max(16px, env(safe-area-inset-top, 16px)) 10px 10px !important; }
+    .palette { width: 100% !important; max-width: 100% !important; border-radius: var(--radius); }
+    .palette-input-wrap { padding: 12px 14px; gap: 8px; }
+    .palette-list { max-height: 55vh; }
+    .palette-item { padding: 10px 10px; font-size: 13px; }
+    .palette-item .cat-label { display: none; }
+
     /* Footer */
-    footer { gap: 6px 8px; font-size: 11px; margin-top: 24px; padding-top: 16px; }
-    .footer-btn { padding: 4px 6px; }
+    footer {
+      gap: 8px 10px !important;
+      font-size: 11px !important;
+      margin-top: 24px !important;
+      padding-top: 14px !important;
+    }
+    footer .sep { display: none !important; }
+    .footer-btn { padding: 5px 8px; min-height: 30px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1604,25 +1711,23 @@
       <div class="brand-mark">◆</div>
       <div class="brand-text">DevDeck<span id="vaultBadge" class="badge" style="display:none">🔒</span></div>
     </div>
-    <div class="header-right">
-      <div class="header-switches">
-        <div id="profileSwitch" class="hstack" style="gap:4px"></div>
-        <div id="engineSwitch" class="hstack" style="gap:4px"></div>
-      </div>
-      <div class="header-actions">
-        <button class="icon-btn" id="btnWidgets" title="Add widget" aria-label="Add widget">＋</button>
-        <button class="icon-btn" id="btnCustomize" title="Customize theme & wallpaper" aria-label="Customize theme & wallpaper">🎨</button>
-        <button class="icon-btn" id="btnPalette" title="Command palette (⌘P)" aria-label="Command palette (⌘P)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px">
-            <path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/>
-          </svg>
-        </button>
-        <button class="icon-btn" id="btnTheme" title="Toggle theme" aria-label="Toggle theme">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px">
-            <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-          </svg>
-        </button>
-      </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="btnWidgets" title="Add widget" aria-label="Add widget">＋</button>
+      <button class="icon-btn" id="btnCustomize" title="Customize theme & wallpaper" aria-label="Customize theme & wallpaper">🎨</button>
+      <button class="icon-btn" id="btnPalette" title="Command palette (⌘P)" aria-label="Command palette (⌘P)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px">
+          <path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/>
+        </svg>
+      </button>
+      <button class="icon-btn" id="btnTheme" title="Toggle theme" aria-label="Toggle theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px">
+          <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+        </svg>
+      </button>
+    </div>
+    <div class="header-switches">
+      <div id="profileSwitch" class="hstack" style="gap:4px"></div>
+      <div id="engineSwitch" class="hstack" style="gap:4px"></div>
     </div>
   </header>
 

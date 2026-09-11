@@ -1,6 +1,6 @@
 // Service worker for Startpage.
 // Uses network-first for navigation (HTML) so updates are immediate, and cache-first for static assets with offline fallback.
-const CACHE = "startpage-v6";
+const CACHE = "startpage-v7";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest"];
 
 self.addEventListener("install", (e) => {
