@@ -3,11 +3,11 @@
   "short_name": "DevDeck",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0e0f12",
-  "theme_color": "#0e0f12",
+  "background_color": "#0b0c0f",
+  "theme_color": "#0b0c0f",
   "icons": [
     {
-      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%230e0f12'/><text x='50%25' y='54%25' text-anchor='middle' dominant-baseline='middle' font-family='system-ui' font-size='38' fill='%236ea8fe'>◆</text></svg>",
+      "src": "./icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
