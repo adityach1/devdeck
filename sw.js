@@ -1,6 +1,6 @@
-// Minimal cache-first service worker for Startpage.
-// Bump CACHE when you change index.html so clients refresh.
-const CACHE = "startpage-v4";
+// Service worker for Startpage.
+// Uses network-first for navigation (HTML) so updates are immediate, and cache-first for static assets with offline fallback.
+const CACHE = "startpage-v6";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest"];
 
 self.addEventListener("install", (e) => {
@@ -21,11 +21,27 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(req.url);
   // Only handle same-origin; let cross-origin (bangs, APIs, status checks) pass through.
   if (url.origin !== location.origin) return;
+
+  // Network-first for HTML navigation requests
+  if (req.mode === "navigate" || req.headers.get("accept")?.includes("text/html")) {
+    e.respondWith(
+      fetch(req)
+        .then(res => {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
+          return res;
+        })
+        .catch(() => caches.match(req).then(hit => hit || caches.match("./index.html")))
+    );
+    return;
+  }
+
+  // Cache-first for other same-origin static assets
   e.respondWith(
     caches.match(req).then(hit => hit || fetch(req).then(res => {
       const copy = res.clone();
       caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
       return res;
-    }).catch(() => caches.match("./index.html")))
+    }))
   );
 });
