@@ -595,40 +595,6 @@ const WIDGETS = {
           }).join("")}
         </div>`;
     }
-  },
-
-  /* ---------- Google Home & Smart Devices ---------- */
-  googlehome: {
-    name: "Google Home",
-    icon: "🏠",
-    desc: "Monitor and control smart lights, plugs, thermostats, locks, and scenes with Google Home Web integration.",
-    defaults: {
-      filterRoom: "all",
-      showScenes: true,
-      compact: false
-    },
-    refresh: 0,
-    config: (c) => {
-      const rooms = ["all", ...new Set(getHomeDevices().map(d => d.room).filter(Boolean))];
-      return `
-        <div class="field">
-          <label>Filter by Room</label>
-          <select data-k="filterRoom">
-            ${rooms.map(r => `<option value="${escapeHtml(r)}" ${c.filterRoom === r ? "selected" : ""}>${r === "all" ? "All Rooms" : escapeHtml(r)}</option>`).join("")}
-          </select>
-        </div>
-        <div class="field">
-          <label style="display:flex;align-items:center;gap:8px">
-            <input type="checkbox" data-k="showScenes" ${c.showScenes !== false ? "checked" : ""}>
-            Show Quick Routine Chips
-          </label>
-        </div>`;
-    },
-    readConfig: (el) => ({
-      filterRoom: el.querySelector('[data-k="filterRoom"]').value,
-      showScenes: el.querySelector('[data-k="showScenes"]').checked
-    }),
-    render: (el, c) => renderGoogleHomeWidget(el, c)
   }
 };
 
@@ -781,6 +747,16 @@ const DEFAULTS = {
       { id: "hd-5", targetTemp: 22 }
     ]}
   ],
+  googleAuth: {
+    connected: false,
+    email: "",
+    name: "",
+    picture: "",
+    clientId: "",
+    projectId: "",
+    accessToken: "",
+    tokenExpiry: 0
+  },
   plugins: [
     {
       id: "pl-hn",
@@ -833,6 +809,7 @@ function load() {
     merged.bangs   = { ...structuredClone(DEFAULTS.bangs),   ...(parsed.bangs   || {}) };
     merged.homeDevices = Array.isArray(parsed.homeDevices) ? parsed.homeDevices : structuredClone(DEFAULTS.homeDevices);
     merged.homeScenes  = Array.isArray(parsed.homeScenes)  ? parsed.homeScenes  : structuredClone(DEFAULTS.homeScenes);
+    merged.googleAuth  = { ...structuredClone(DEFAULTS.googleAuth), ...(parsed.googleAuth || {}) };
 
     // Migrate old default widgets (e.g. 3-item setup with octocat / old SF weather) to new standard defaults
     const isOldDefaultWidgets = Array.isArray(parsed.widgets) && (
@@ -844,6 +821,8 @@ function load() {
     } else {
       merged.widgets = parsed.widgets;
     }
+    // Google Home is accessed as a Tool, not as a dashboard widget
+    merged.widgets = (merged.widgets || []).filter(w => w.type !== "googlehome");
     return merged;
   } catch { return structuredClone(DEFAULTS); }
 }
@@ -3929,7 +3908,7 @@ function parseScalar(v) {
 }
 
 /* ============================================================
-   GOOGLE HOME & SMART DEVICES
+   GOOGLE HOME & SMART DEVICES TOOL (GOOGLE ACCOUNT INTEGRATED)
    ============================================================ */
 function getHomeDevices() {
   if (!Array.isArray(cfg.homeDevices)) cfg.homeDevices = structuredClone(DEFAULTS.homeDevices);
@@ -3943,9 +3922,37 @@ function getHomeScenes() {
 
 async function dispatchDeviceAction(device) {
   save();
+
+  // 1. Google Smart Device Management API dispatch (for Google Nest synced devices)
+  if (device.sdmName && cfg.googleAuth?.accessToken) {
+    try {
+      const cleanName = device.sdmName.startsWith("enterprises/") ? device.sdmName : `enterprises/${device.sdmName}`;
+      const cmdUrl = `https://smartdevicemanagement.googleapis.com/v1/${cleanName}:executeCommand`;
+      let command = null;
+      let params = {};
+
+      if (device.type === "thermostat" && device.targetTemp !== undefined) {
+        command = "sdm.devices.commands.ThermostatTemperatureSetpoint.SetHeat";
+        params = { heatCelsius: Number(device.targetTemp) };
+      }
+
+      if (command) {
+        fetch(cmdUrl, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${cfg.googleAuth.accessToken}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ command, params })
+        }).catch(() => {});
+      }
+    } catch {}
+  }
+
+  // 2. Optional Webhook integration (Home Assistant / Maker / IoT endpoint)
   if (device.webhookUrl && typeof device.webhookUrl === "string" && device.webhookUrl.trim().startsWith("http")) {
     try {
-      await fetch(device.webhookUrl.trim(), {
+      fetch(device.webhookUrl.trim(), {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
@@ -3961,10 +3968,8 @@ async function dispatchDeviceAction(device) {
           volume: device.volume,
           timestamp: Date.now()
         })
-      });
-    } catch {
-      // silent catch for no-cors/offline
-    }
+      }).catch(() => {});
+    } catch {}
   }
 }
 
@@ -3987,180 +3992,147 @@ function triggerHomeScene(sceneId) {
   });
 
   save();
-  renderActiveGoogleHomeWidgets();
   toast(`Routine: ${scene.name}`);
 }
 
-function renderActiveGoogleHomeWidgets() {
-  const cards = document.querySelectorAll(".widget");
-  cards.forEach(card => {
-    const menuBtn = card.querySelector(".widget-menu");
-    if (!menuBtn) return;
-    const wid = menuBtn.dataset.menu;
-    const w = widgetById(wid);
-    if (w && w.type === "googlehome") {
-      const body = card.querySelector(".widget-body");
-      if (body) renderGoogleHomeWidget(body, w.config || {});
+async function checkGoogleAuthRedirect() {
+  const hash = window.location.hash;
+  if (!hash || !hash.includes("access_token=")) return;
+  const params = new URLSearchParams(hash.replace(/^#/, ""));
+  const token = params.get("access_token");
+  const expiresIn = parseInt(params.get("expires_in") || "3600");
+  if (!token) return;
+
+  try {
+    const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const info = await res.json();
+      cfg.googleAuth = cfg.googleAuth || {};
+      cfg.googleAuth.connected = true;
+      cfg.googleAuth.accessToken = token;
+      cfg.googleAuth.tokenExpiry = Date.now() + expiresIn * 1000;
+      cfg.googleAuth.email = info.email || "";
+      cfg.googleAuth.name = info.name || "";
+      cfg.googleAuth.picture = info.picture || "";
+      save();
+      toast(`Google Account Connected: ${info.email}`);
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+      if (sessionStorage.getItem("ghome_oauth_pending")) {
+        sessionStorage.removeItem("ghome_oauth_pending");
+        setTimeout(() => openTool("ghome"), 200);
+      }
     }
-  });
+  } catch (err) {
+    console.error("Google Auth check error", err);
+  }
 }
 
-function renderGoogleHomeWidget(el, c = {}) {
-  const allDevices = getHomeDevices();
-  const scenes = getHomeScenes();
-  const rooms = ["all", ...new Set(allDevices.map(d => d.room).filter(Boolean))];
-  let activeRoom = c.filterRoom || "all";
-  if (!rooms.includes(activeRoom)) activeRoom = "all";
-
-  function update() {
-    const filtered = activeRoom === "all" ? allDevices : allDevices.filter(d => d.room === activeRoom);
-
-    el.innerHTML = `
-      <div class="w-ghome">
-        <div class="ghome-top">
-          <div class="ghome-rooms">
-            ${rooms.map(r => `
-              <button class="ghome-room-btn ${r === activeRoom ? "active" : ""}" data-room="${escapeHtml(r)}">
-                ${r === "all" ? "All" : escapeHtml(r)}
-              </button>
-            `).join("")}
-          </div>
-          <a href="https://home.google.com/" target="_blank" rel="noopener" class="ghome-web-btn" title="Open Google Home Web">
-            <span>🏠</span> Web ↗
-          </a>
-        </div>
-
-        <div class="ghome-devices">
-          ${!filtered.length ? `<div style="grid-column:1/-1;font-size:11px;color:var(--dim);text-align:center;padding:12px">No devices in ${escapeHtml(activeRoom)}</div>` : ""}
-          ${filtered.map(d => {
-            const isLight = d.type === "light";
-            const isPlug = d.type === "plug";
-            const isThermostat = d.type === "thermostat";
-            const isSpeaker = d.type === "speaker";
-            const isLock = d.type === "lock";
-
-            let icon = "💡";
-            if (isPlug) icon = "🔌";
-            else if (isThermostat) icon = "🌡️";
-            else if (isSpeaker) icon = "🔊";
-            else if (isLock) icon = d.locked ? "🔒" : "🔓";
-
-            let pill = "OFF";
-            if (isThermostat) {
-              pill = `${d.targetTemp || 22}${d.unit || "°C"}`;
-            } else if (isLock) {
-              pill = d.locked ? "LOCKED" : "UNLOCKED";
-            } else if (d.on) {
-              if (isLight && d.brightness) pill = `${d.brightness}%`;
-              else if (isPlug && d.power) pill = d.power;
-              else if (isSpeaker) pill = d.volume ? `${d.volume}%` : "ON";
-              else pill = "ON";
-            }
-
-            const isOn = isLock ? !d.locked : (isThermostat ? true : !!d.on);
-
-            return `
-              <div class="ghome-card ${isOn ? "on" : ""}" data-dev="${escapeHtml(d.id)}">
-                <div class="ghome-head">
-                  <span class="ghome-ico">${icon}</span>
-                  <span class="ghome-pill">${pill}</span>
-                </div>
-                <div class="ghome-info">
-                  <span class="ghome-name" title="${escapeHtml(d.name)}">${escapeHtml(d.name)}</span>
-                  <span class="ghome-room">${escapeHtml(d.room || "Home")}</span>
-                </div>
-                <div class="ghome-action">
-                  ${isThermostat ? `
-                    <div class="ghome-stepper">
-                      <button class="ghome-stepper-btn" data-step="down" title="Lower temp">-</button>
-                      <span class="ghome-temp-val">${d.targetTemp || 22}${d.unit || "°C"}</span>
-                      <button class="ghome-stepper-btn" data-step="up" title="Raise temp">+</button>
-                    </div>
-                  ` : `
-                    <button class="ghome-btn" data-toggle="${escapeHtml(d.id)}">
-                      ${isLock ? (d.locked ? "Unlock" : "Lock") : (d.on ? "Turn Off" : "Turn On")}
-                    </button>
-                  `}
-                </div>
-              </div>
-            `;
-          }).join("")}
-        </div>
-
-        ${c.showScenes !== false && scenes.length ? `
-          <div class="ghome-scenes">
-            ${scenes.map(s => `
-              <button class="ghome-scene-chip" data-scene="${escapeHtml(s.id)}" title="Run ${escapeHtml(s.name)}">
-                <span>${s.icon || "⚡"}</span>
-                <span>${escapeHtml(s.name)}</span>
-              </button>
-            `).join("")}
-          </div>
-        ` : ""}
-      </div>
-    `;
-
-    el.querySelectorAll(".ghome-room-btn").forEach(btn => {
-      btn.onclick = (e) => {
-        e.stopPropagation();
-        activeRoom = btn.dataset.room;
-        update();
-      };
-    });
-
-    el.querySelectorAll(".ghome-scene-chip").forEach(btn => {
-      btn.onclick = (e) => {
-        e.stopPropagation();
-        triggerHomeScene(btn.dataset.scene);
-      };
-    });
-
-    el.querySelectorAll(".ghome-btn").forEach(btn => {
-      btn.onclick = (e) => {
-        e.stopPropagation();
-        const id = btn.dataset.toggle;
-        const dev = allDevices.find(x => x.id === id);
-        if (!dev) return;
-        if (dev.type === "lock") dev.locked = !dev.locked;
-        else dev.on = !dev.on;
-        dispatchDeviceAction(dev);
-        update();
-        renderActiveGoogleHomeWidgets();
-      };
-    });
-
-    el.querySelectorAll(".ghome-stepper-btn").forEach(btn => {
-      btn.onclick = (e) => {
-        e.stopPropagation();
-        const card = btn.closest("[data-dev]");
-        if (!card) return;
-        const dev = allDevices.find(x => x.id === card.dataset.dev);
-        if (!dev) return;
-        const delta = btn.dataset.step === "up" ? 1 : -1;
-        dev.targetTemp = Math.max(15, Math.min(32, (dev.targetTemp || 22) + delta));
-        dispatchDeviceAction(dev);
-        update();
-        renderActiveGoogleHomeWidgets();
-      };
-    });
+async function syncGoogleDevices(onDone) {
+  if (!cfg.googleAuth?.accessToken) {
+    toast("Please connect your Google Account first");
+    return;
   }
+  const rawPid = (cfg.googleAuth.projectId || "").trim();
+  if (!rawPid) {
+    toast("Enter your Nest Project ID in settings first");
+    return;
+  }
+  const cleanPid = rawPid.startsWith("enterprises/") ? rawPid.replace("enterprises/", "") : rawPid;
+  const url = `https://smartdevicemanagement.googleapis.com/v1/enterprises/${encodeURIComponent(cleanPid)}/devices`;
 
-  update();
+  try {
+    toast("Syncing Google Home & Nest devices…");
+    const res = await fetch(url, {
+      headers: {
+        "Authorization": `Bearer ${cfg.googleAuth.accessToken}`,
+        "Content-Type": "application/json"
+      }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    const gDevices = data.devices || [];
+    if (!gDevices.length) {
+      toast("No Nest devices found for this Project ID");
+      if (onDone) onDone();
+      return;
+    }
+
+    const devices = getHomeDevices();
+    let syncedCount = 0;
+    gDevices.forEach(gd => {
+      const sdmName = gd.name;
+      const traits = gd.traits || {};
+      const info = traits["sdm.devices.traits.Info"] || {};
+      const customName = info.customName || gd.type.split(".").pop();
+      const existing = devices.find(d => d.sdmName === sdmName);
+
+      if (existing) {
+        existing.name = customName;
+        if (traits["sdm.devices.traits.ThermostatTemperatureSetpoint"]) {
+          existing.targetTemp = Math.round(traits["sdm.devices.traits.ThermostatTemperatureSetpoint"].heatCelsius || 22);
+        }
+        if (traits["sdm.devices.traits.Temperature"]) {
+          existing.currentTemp = Math.round(traits["sdm.devices.traits.Temperature"].ambientTemperatureCelsius || 21);
+        }
+        syncedCount++;
+      } else {
+        const isThermostat = gd.type.includes("THERMOSTAT");
+        const isCam = gd.type.includes("DOORBELL") || gd.type.includes("CAMERA");
+        const isDisplay = gd.type.includes("DISPLAY");
+        devices.push({
+          id: "gd-" + Math.random().toString(36).slice(2, 7),
+          sdmName,
+          name: customName,
+          type: isThermostat ? "thermostat" : (isCam ? "camera" : (isDisplay ? "speaker" : "plug")),
+          room: "Google Home",
+          on: true,
+          targetTemp: isThermostat ? Math.round(traits["sdm.devices.traits.ThermostatTemperatureSetpoint"]?.heatCelsius || 22) : undefined,
+          currentTemp: isThermostat ? Math.round(traits["sdm.devices.traits.Temperature"]?.ambientTemperatureCelsius || 21) : undefined,
+          unit: isThermostat ? "°C" : undefined,
+          isGoogle: true
+        });
+        syncedCount++;
+      }
+    });
+
+    save();
+    toast(`Synced ${syncedCount} devices from Google Home`);
+    if (onDone) onDone();
+  } catch (e) {
+    toast(`Sync failed: ${e.message}`);
+    if (onDone) onDone();
+  }
 }
 
 function toolGoogleHome() {
   const allDevices = getHomeDevices();
   const scenes = getHomeScenes();
   let filterRoom = "all";
+  let showAuthForm = false;
+  let showGuide = false;
 
   openModal("Google Home & Smart Devices", `
+    <!-- Google Account Integration Section -->
+    <div class="ghome-auth-card" id="ghomeAuthCard">
+      <!-- Dynamic Google Account State -->
+    </div>
+
+    <!-- Quick Tool Actions Bar -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <a href="https://home.google.com/" target="_blank" rel="noopener" class="ghome-web-btn" style="margin-left:0">
           <span>🏠</span> Google Home Web ↗
         </a>
         <a href="https://console.nest.google.com/device-access" target="_blank" rel="noopener" class="ghome-web-btn" style="margin-left:0;color:var(--fg-2);border-color:var(--border)">
-          <span>🔑</span> Nest Access Console ↗
+          <span>🔑</span> Nest Console ↗
+        </a>
+        <a href="https://myaccount.google.com/device-activity" target="_blank" rel="noopener" class="ghome-web-btn" style="margin-left:0;color:var(--fg-2);border-color:var(--border)">
+          <span>👤</span> Account Devices ↗
         </a>
       </div>
       <button id="ghomeAddToggle" style="font-size:12px;padding:5px 12px">+ Add Device</button>
@@ -4172,7 +4144,7 @@ function toolGoogleHome() {
       <input type="hidden" id="ghomeFormId">
       <div class="field" style="margin-bottom:8px">
         <label>Device Name</label>
-        <input type="text" id="ghomeFormName" placeholder="e.g. Studio Light, AC, Coffee Maker">
+        <input type="text" id="ghomeFormName" placeholder="e.g. Studio Light, AC, Workstation Plug">
       </div>
       <div class="row" style="margin-bottom:8px;gap:8px">
         <div style="flex:1">
@@ -4218,6 +4190,7 @@ function toolGoogleHome() {
 
   document.getElementById("modalBox").classList.add("wide");
 
+  const authCardEl = document.getElementById("ghomeAuthCard");
   const formEl = document.getElementById("ghomeDevForm");
   const formHeading = document.getElementById("ghomeFormHeading");
   const formId = document.getElementById("ghomeFormId");
@@ -4275,12 +4248,218 @@ function toolGoogleHome() {
     }
     save();
     formEl.style.display = "none";
-    renderActiveGoogleHomeWidgets();
     renderModalView();
     toast(formId.value ? "Device updated" : "Device added");
   };
 
+  function renderAuthSection() {
+    const auth = cfg.googleAuth || {};
+    const isConnected = !!auth.connected && !!auth.accessToken;
+
+    if (isConnected) {
+      authCardEl.innerHTML = `
+        <div class="ghome-auth-header">
+          <div class="ghome-auth-user">
+            ${auth.picture ? `<img src="${escapeHtml(auth.picture)}" class="ghome-avatar" alt="">` : `<div class="ghome-avatar-fallback">G</div>`}
+            <div class="ghome-user-meta">
+              <span class="ghome-user-name">
+                ${escapeHtml(auth.name || "Google User")}
+                <span class="ghome-badge-connected">● Connected</span>
+              </span>
+              <span class="ghome-user-email">${escapeHtml(auth.email || "Google Account")}</span>
+            </div>
+          </div>
+          <div class="ghome-auth-actions">
+            <button id="ghomeSyncBtn" class="ghome-btn" style="padding:5px 10px;font-size:11px" title="Sync live devices from Google Smart Device Management API">
+              🔄 Sync Google Devices
+            </button>
+            <button id="ghomeAuthSettingsBtn" class="ghome-btn" style="padding:5px 8px;font-size:11px" title="Configure Client ID or Project ID">
+              ⚙️
+            </button>
+            <button id="ghomeDisconnectBtn" class="ghome-btn" style="padding:5px 10px;font-size:11px;color:var(--red);border-color:var(--red)">
+              Disconnect
+            </button>
+          </div>
+        </div>
+
+        <div id="ghomeSettingsBox" style="display:${showAuthForm ? "block" : "none"};margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+          <div class="row" style="gap:8px;margin-bottom:6px">
+            <div style="flex:1">
+              <label style="font-size:11px;color:var(--muted)">Nest Device Access Project ID</label>
+              <input type="text" id="ghomeSettingsPid" value="${escapeHtml(auth.projectId || "")}" placeholder="enterprises/xxxx-xxxx or UUID" style="width:100%;padding:5px;font-size:11px;background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--fg)">
+            </div>
+            <div style="flex:1">
+              <label style="font-size:11px;color:var(--muted)">OAuth Client ID</label>
+              <input type="text" id="ghomeSettingsCid" value="${escapeHtml(auth.clientId || "")}" placeholder="xxxx.apps.googleusercontent.com" style="width:100%;padding:5px;font-size:11px;background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--fg)">
+            </div>
+          </div>
+          <div class="row" style="gap:6px">
+            <button id="ghomeSaveSettings" style="font-size:11px;padding:4px 10px">Save Settings</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("ghomeSyncBtn").onclick = () => {
+        syncGoogleDevices(() => renderModalView());
+      };
+
+      document.getElementById("ghomeAuthSettingsBtn").onclick = () => {
+        showAuthForm = !showAuthForm;
+        renderAuthSection();
+      };
+
+      document.getElementById("ghomeSaveSettings").onclick = () => {
+        auth.projectId = document.getElementById("ghomeSettingsPid").value.trim();
+        auth.clientId = document.getElementById("ghomeSettingsCid").value.trim();
+        save();
+        toast("Google settings saved");
+        showAuthForm = false;
+        renderAuthSection();
+      };
+
+      document.getElementById("ghomeDisconnectBtn").onclick = () => {
+        if (confirm("Disconnect Google Account from DevDeck?")) {
+          auth.connected = false;
+          auth.accessToken = "";
+          auth.email = "";
+          auth.name = "";
+          auth.picture = "";
+          save();
+          toast("Google Account disconnected");
+          renderModalView();
+        }
+      };
+    } else {
+      // Not connected
+      authCardEl.innerHTML = `
+        <div class="ghome-auth-header">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--fg);display:flex;align-items:center;gap:6px">
+              <span>Google Account Integration</span>
+              <span style="font-size:10px;color:var(--dim);border:1px solid var(--border);padding:1px 6px;border-radius:999px">Optional</span>
+            </div>
+            <div style="font-size:11px;color:var(--muted)">Connect to control live Google Nest thermostats, displays, and Home devices.</div>
+          </div>
+          <div class="ghome-auth-actions">
+            <button id="ghomeSignInBtn" class="ghome-google-btn">
+              <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+              Sign in with Google
+            </button>
+            <button id="ghomeToggleTokenBtn" class="ghome-btn" style="padding:6px 10px;font-size:11px">
+              Enter Token / Project ID
+            </button>
+            <button id="ghomeGuideToggle" class="ghome-btn" style="padding:6px 10px;font-size:11px">
+              Guide ℹ️
+            </button>
+          </div>
+        </div>
+
+        <!-- Token / OAuth Input Form -->
+        <div id="ghomeTokenBox" style="display:${showAuthForm ? "block" : "none"};margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+          <div class="row" style="gap:8px;margin-bottom:6px">
+            <div style="flex:1">
+              <label style="font-size:11px;color:var(--muted)">OAuth Access Token (or Google Playground token)</label>
+              <input type="password" id="ghomeManualToken" placeholder="ya29.a0..." style="width:100%;padding:5px;font-size:11px;background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--fg)">
+            </div>
+            <div style="flex:1">
+              <label style="font-size:11px;color:var(--muted)">Nest Device Access Project ID</label>
+              <input type="text" id="ghomeManualPid" value="${escapeHtml(auth.projectId || "")}" placeholder="enterprises/xxxx or UUID" style="width:100%;padding:5px;font-size:11px;background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--fg)">
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:8px">
+            <label style="font-size:11px;color:var(--muted)">Google Cloud Client ID (for 1-click Sign In)</label>
+            <input type="text" id="ghomeManualCid" value="${escapeHtml(auth.clientId || "")}" placeholder="xxxx.apps.googleusercontent.com" style="width:100%;padding:5px;font-size:11px;background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--fg)">
+          </div>
+          <div class="row" style="gap:6px">
+            <button id="ghomeSaveTokenBtn" style="font-size:11px;padding:5px 12px">Connect Account</button>
+          </div>
+        </div>
+
+        <!-- Guide Box -->
+        <div id="ghomeGuideBox" class="ghome-guide-box" style="display:${showGuide ? "block" : "none"}">
+          <strong>How to connect Google Home / Nest to DevDeck:</strong>
+          <ol>
+            <li>Enable <em>Smart Device Management API</em> in the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener" style="color:var(--accent)">Google Cloud Console</a> and create an OAuth 2.0 Web Client ID.</li>
+            <li>Register in the <a href="https://console.nest.google.com/device-access" target="_blank" rel="noopener" style="color:var(--accent)">Nest Device Access Console</a> ($5 one-time fee) and link your GCP OAuth Client ID to get your Project ID.</li>
+            <li>Click <strong>Sign in with Google</strong> (or paste an OAuth access token) to automatically control live Nest thermostats and devices.</li>
+          </ol>
+        </div>
+      `;
+
+      document.getElementById("ghomeSignInBtn").onclick = () => {
+        let cid = (auth.clientId || "").trim();
+        if (!cid) {
+          cid = prompt("Enter your Google Cloud OAuth Client ID (from GCP Console):", auth.clientId || "");
+          if (!cid) return;
+          auth.clientId = cid.trim();
+          save();
+        }
+        sessionStorage.setItem("ghome_oauth_pending", "1");
+        const redirectUri = window.location.origin + window.location.pathname;
+        const scope = encodeURIComponent("https://www.googleapis.com/auth/sdm.service email profile openid");
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(cid)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${scope}&prompt=consent`;
+        window.location.href = authUrl;
+      };
+
+      document.getElementById("ghomeToggleTokenBtn").onclick = () => {
+        showAuthForm = !showAuthForm;
+        renderAuthSection();
+      };
+
+      document.getElementById("ghomeGuideToggle").onclick = () => {
+        showGuide = !showGuide;
+        renderAuthSection();
+      };
+
+      if (showAuthForm) {
+        document.getElementById("ghomeSaveTokenBtn").onclick = async () => {
+          const tok = document.getElementById("ghomeManualToken").value.trim();
+          const pid = document.getElementById("ghomeManualPid").value.trim();
+          const cid = document.getElementById("ghomeManualCid").value.trim();
+
+          auth.projectId = pid;
+          auth.clientId = cid;
+
+          if (tok) {
+            auth.accessToken = tok;
+            auth.tokenExpiry = Date.now() + 3600 * 1000;
+            try {
+              toast("Validating Google Account…");
+              const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                headers: { Authorization: `Bearer ${tok}` }
+              });
+              if (res.ok) {
+                const info = await res.json();
+                auth.connected = true;
+                auth.email = info.email || "Google Account";
+                auth.name = info.name || "";
+                auth.picture = info.picture || "";
+                save();
+                toast(`Connected as ${info.email}`);
+                renderModalView();
+                return;
+              }
+            } catch {}
+            // Fallback connection if userinfo is restricted
+            auth.connected = true;
+            auth.email = "Google Account";
+            save();
+            toast("Connected with OAuth token");
+            renderModalView();
+          } else {
+            save();
+            toast("Settings saved");
+            renderAuthSection();
+          }
+        };
+      }
+    }
+  }
+
   function renderModalView() {
+    renderAuthSection();
+
+    // Render Scenes
     const scenesEl = document.getElementById("ghomeModalScenes");
     scenesEl.innerHTML = scenes.map(s => `
       <button class="ghome-scene-chip" data-modal-scene="${escapeHtml(s.id)}">
@@ -4295,6 +4474,7 @@ function toolGoogleHome() {
       };
     });
 
+    // Render Room filters
     const rooms = ["all", ...new Set(allDevices.map(d => d.room).filter(Boolean))];
     if (!rooms.includes(filterRoom)) filterRoom = "all";
     const roomsEl = document.getElementById("ghomeModalRooms");
@@ -4310,12 +4490,13 @@ function toolGoogleHome() {
       };
     });
 
+    // Render Devices
     const filtered = filterRoom === "all" ? allDevices : allDevices.filter(d => d.room === filterRoom);
     document.getElementById("ghomeDevCount").textContent = `${filtered.length} device${filtered.length === 1 ? "" : "s"}`;
     const gridEl = document.getElementById("ghomeModalDevGrid");
 
     if (!filtered.length) {
-      gridEl.innerHTML = `<div style="grid-column:1/-1;font-size:12px;color:var(--dim);text-align:center;padding:24px">No devices found in ${escapeHtml(filterRoom)}. Click "+ Add Device" above to add one.</div>`;
+      gridEl.innerHTML = `<div style="grid-column:1/-1;font-size:12px;color:var(--dim);text-align:center;padding:24px">No devices found in ${escapeHtml(filterRoom)}. Click "+ Add Device" above or "Sync Google Devices".</div>`;
       return;
     }
 
@@ -4325,18 +4506,22 @@ function toolGoogleHome() {
       const isThermostat = d.type === "thermostat";
       const isSpeaker = d.type === "speaker";
       const isLock = d.type === "lock";
+      const isCamera = d.type === "camera";
 
       let icon = "💡";
       if (isPlug) icon = "🔌";
       else if (isThermostat) icon = "🌡️";
       else if (isSpeaker) icon = "🔊";
       else if (isLock) icon = d.locked ? "🔒" : "🔓";
+      else if (isCamera) icon = "📹";
 
       let pill = "OFF";
       if (isThermostat) {
         pill = `${d.targetTemp || 22}${d.unit || "°C"}`;
       } else if (isLock) {
         pill = d.locked ? "LOCKED" : "UNLOCKED";
+      } else if (isCamera) {
+        pill = "LIVE";
       } else if (d.on) {
         if (isLight && d.brightness) pill = `${d.brightness}%`;
         else if (isPlug && d.power) pill = d.power;
@@ -4344,7 +4529,7 @@ function toolGoogleHome() {
         else pill = "ON";
       }
 
-      const isOn = isLock ? !d.locked : (isThermostat ? true : !!d.on);
+      const isOn = isLock ? !d.locked : (isThermostat || isCamera ? true : !!d.on);
 
       return `
         <div class="ghome-card ${isOn ? "on" : ""}" data-dev="${escapeHtml(d.id)}">
@@ -4357,7 +4542,10 @@ function toolGoogleHome() {
             </div>
           </div>
           <div class="ghome-info">
-            <span class="ghome-name" title="${escapeHtml(d.name)}">${escapeHtml(d.name)}</span>
+            <span class="ghome-name" title="${escapeHtml(d.name)}">
+              ${escapeHtml(d.name)}
+              ${d.isGoogle ? `<span class="ghome-tag-google">Nest</span>` : ""}
+            </span>
             <span class="ghome-room">${escapeHtml(d.room || "Home")}${d.webhookUrl ? " · ⚡" : ""}</span>
           </div>
           ${isLight && d.on ? `
@@ -4374,6 +4562,8 @@ function toolGoogleHome() {
                 <span class="ghome-temp-val">${d.targetTemp || 22}${d.unit || "°C"}</span>
                 <button class="ghome-stepper-btn" data-step="up" title="Raise temp">+</button>
               </div>
+            ` : isCamera ? `
+              <a href="https://home.google.com/" target="_blank" rel="noopener" class="ghome-btn" style="text-decoration:none;display:inline-block">View Stream ↗</a>
             ` : `
               <button class="ghome-btn" data-toggle="${escapeHtml(d.id)}">
                 ${isLock ? (d.locked ? "Unlock" : "Lock") : (d.on ? "Turn Off" : "Turn On")}
@@ -4408,7 +4598,6 @@ function toolGoogleHome() {
         if (confirm(`Remove "${allDevices[idx].name}"?`)) {
           allDevices.splice(idx, 1);
           save();
-          renderActiveGoogleHomeWidgets();
           renderModalView();
           toast("Device removed");
         }
@@ -4423,7 +4612,6 @@ function toolGoogleHome() {
         if (dev.type === "lock") dev.locked = !dev.locked;
         else dev.on = !dev.on;
         dispatchDeviceAction(dev);
-        renderActiveGoogleHomeWidgets();
         renderModalView();
       };
     });
@@ -4446,7 +4634,6 @@ function toolGoogleHome() {
         if (!dev) return;
         dev.brightness = parseInt(input.value);
         dispatchDeviceAction(dev);
-        renderActiveGoogleHomeWidgets();
       };
     });
 
@@ -4460,7 +4647,6 @@ function toolGoogleHome() {
         const delta = btn.dataset.step === "up" ? 1 : -1;
         dev.targetTemp = Math.max(15, Math.min(32, (dev.targetTemp || 22) + delta));
         dispatchDeviceAction(dev);
-        renderActiveGoogleHomeWidgets();
         renderModalView();
       };
     });
@@ -5521,6 +5707,7 @@ renderBangHint();
 renderPlugins();
 renderWidgets();
 checkBackupNudge();
+checkGoogleAuthRedirect();
 
 if (cfg.firstRun) {
   setTimeout(() => {

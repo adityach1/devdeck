@@ -1522,6 +1522,140 @@
     transform: translateY(-1px);
   }
 
+  /* Google Account Integration Card */
+  .ghome-auth-card {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: all .2s var(--ease);
+  }
+  .ghome-auth-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .ghome-auth-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ghome-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid var(--border-hi);
+  }
+  .ghome-avatar-fallback {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4285f4, #34a853, #fbbc05, #ea4335);
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ghome-user-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .ghome-user-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fg);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ghome-user-email {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .ghome-badge-connected {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--green);
+    background: color-mix(in srgb, var(--green) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--green) 30%, transparent);
+    padding: 1px 7px;
+    border-radius: 999px;
+  }
+  .ghome-google-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    color: #3c4043;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid #dadce0;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    transition: all .15s var(--ease);
+  }
+  .ghome-google-btn:hover {
+    background: #f8f9fa;
+    border-color: #c6c9ce;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  }
+  .ghome-google-btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  .ghome-auth-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .ghome-tag-google {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9px;
+    font-weight: 600;
+    color: #4285f4;
+    background: color-mix(in srgb, #4285f4 12%, transparent);
+    border: 1px solid color-mix(in srgb, #4285f4 30%, transparent);
+    padding: 1px 5px;
+    border-radius: 4px;
+    margin-left: 4px;
+  }
+  .ghome-guide-box {
+    background: var(--panel);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--fg-2);
+  }
+  .ghome-guide-box ol {
+    margin: 6px 0 0 16px;
+    padding: 0;
+  }
+  .ghome-guide-box li {
+    margin-bottom: 4px;
+  }
+
   /* ============================================================
      POMODORO TIMER WIDGET
      ============================================================ */

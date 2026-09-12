@@ -125,7 +125,6 @@ The widget dashboard automatically organizes your view with zero configuration.
 
 Click the **`＋` Add Widget** button in the dashboard header to add any of these modular widgets:
 
-- **🏠 Google Home & Smart Devices** — Control smart lights, plugs, thermostats, speakers, and locks with room filters and one-click quick routines.
 - **🌍 World Clock** — Multi-timezone live display.
 - **🐙 GitHub Activity** — Recent pushes, repositories, and follower stats (supports personal access tokens).
 - **₿ Crypto Prices** — Live CoinGecko price tickers (BTC, ETH, SOL, etc.) in USD, EUR, INR, GBP, or JPY.
@@ -167,8 +166,9 @@ Access the comprehensive developer suite from the top navigation bar or keyboard
     - Full HTTP request runner with custom headers, query params, body editors, response headers, and performance metrics.
 12. **Markdown Scratchpad (`Alt+N`)**
     - Multi-buffer notes manager with live split Markdown preview and interactive task checklist toggles.
-13. **Google Home & Smart Devices Manager (Quick Tools → `Home`)**
-    - Manage smart lights, plugs, thermostats, audio, and locks; adjust brightness and temperature; trigger scenes; dispatch webhooks; and launch Google Home Web (`home.google.com`).
+13. **Google Home & Smart Devices Tool (Quick Tools → `Home`)**
+    - Google Account integration (OAuth 2.0 / GIS) with Google Smart Device Management (SDM) API sync for live Nest thermostats, cameras, and devices.
+    - Control smart lights, plugs, thermostats, audio, and locks; adjust brightness and temperature; trigger scenes; dispatch webhooks; and launch Google Home Web (`home.google.com`).
 
 ---
 
