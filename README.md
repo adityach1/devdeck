@@ -221,7 +221,7 @@ DevDeck can be installed directly into Google Chrome, Brave, Arc, Edge, or any C
 1. Open your browser and navigate to `chrome://extensions` (or `edge://extensions` / `brave://extensions`).
 2. Enable **Developer mode** via the toggle switch in the top-right corner.
 3. Click the **Load unpacked** button in the top-left toolbar.
-4. Select the repository root folder (`adityach1.github.io`).
+4. Select the repository root folder (`devdeck`).
 5. Open a new tab (`Cmd+T` or `Ctrl+T`) — DevDeck is now your official new tab dashboard!
 
 > [!TIP]
@@ -243,7 +243,7 @@ DevDeck is designed to be hosted for free on Cloudflare Pages with zero build co
    ```
 2. Log into the [Cloudflare Dashboard](https://dash.cloudflare.com/).
 3. Navigate to **Compute (Workers & Pages)** → **Create application** → **Pages** → **Connect to Git**.
-4. Select your repository (`adityach1.github.io`).
+4. Select your repository (`devdeck`).
 5. Set the build configuration:
    * **Framework preset:** `None`
    * **Build command:** *(leave blank)*
@@ -270,8 +270,8 @@ Because DevDeck requires zero build steps or bundlers, you can run it locally wi
 
 ```bash
 # Clone the repository
-git clone https://github.com/adityach1/adityach1.github.io.git
-cd adityach1.github.io
+git clone https://github.com/adityach1/devdeck.git
+cd devdeck
 
 # Using Python:
 python3 -m http.server 8080
