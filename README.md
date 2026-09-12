@@ -25,6 +25,7 @@
 - [Encrypted Secrets Vault](#-encrypted-secrets-vault)
 - [Keyboard Shortcuts](#-keyboard-shortcuts)
 - [Customization](#-customization)
+- [Project Structure](#-project-structure)
 - [Chrome Extension Installation](#-chrome-extension-installation)
 - [Cloudflare Pages Deployment](#-cloudflare-pages-deployment)
 - [Local Development](#-local-development)
@@ -209,6 +210,31 @@ Click the **⚙️ Settings** icon in the header or press `Alt + C`:
   - Wallpaper Blur (`0px` to `20px`) and Brightness (`20%` to `100%`) adjustment sliders.
 - **Profiles:** Create separate profiles for `Work`, `Personal`, or `Dev` with isolated bookmarks, widgets, and scratchpads.
 - **Backup & Restore:** Full JSON export and import of all startpage preferences and configs.
+
+---
+
+## 📁 Project Structure
+
+```text
+devdeck/
+├── css/
+│   └── style.css            # Responsive layout, animations, and theme styles
+├── js/
+│   ├── app.js               # Application core, widgets, tools, and vault logic
+│   └── background.js        # Extension background service worker
+├── icons/
+│   ├── icon.svg             # Master vector brand logo
+│   ├── icon-16.png          # 16x16 icon (favicon & toolbar)
+│   ├── icon-32.png          # 32x32 icon (Retina & taskbar)
+│   ├── icon-48.png          # 48x48 icon (Chrome extensions manager)
+│   └── icon-128.png         # 128x128 icon (Chrome Web Store & PWA install)
+├── index.html               # Clean semantic HTML entry point
+├── manifest.json            # Chrome Extension (Manifest V3) definition
+├── manifest.webmanifest     # Progressive Web App (PWA) manifest
+├── sw.js                    # Offline caching service worker (root scope)
+├── README.md                # Project documentation & guides
+└── LICENSE                  # MIT License
+```
 
 ---
 
