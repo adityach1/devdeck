@@ -482,15 +482,100 @@
   .w-world .row .city { color: var(--muted); }
   .w-world .row .t { font-family: var(--mono); color: var(--fg-2); }
 
-  /* weather */
-  .w-weather { display: flex; align-items: center; gap: 14px; }
-  .w-weather .temp {
-    font-family: var(--mono); font-size: 34px; font-weight: 300;
-    line-height: 1; color: var(--fg);
+  /* weather — enriched developer UI/UX */
+  .w-weather {
+    display: flex; flex-direction: column; gap: 10px;
   }
-  .w-weather .cond { color: var(--muted); font-size: 12px; }
-  .w-weather .loc { color: var(--dim); font-size: 11px; }
-  .w-weather .ico-big { font-size: 34px; }
+  .w-weather-hero {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .w-weather-left {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .w-weather-ico {
+    font-size: 34px; line-height: 1; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,.25));
+  }
+  .w-weather-temp-wrap {
+    display: flex; align-items: baseline; gap: 4px;
+  }
+  .w-weather .temp {
+    font-family: var(--mono); font-size: 32px; font-weight: 400;
+    line-height: 1; color: var(--fg); letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+  .w-weather-unit-btn {
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    color: var(--accent); cursor: pointer; background: var(--panel-2);
+    border: 1px solid var(--border); padding: 1px 4px; border-radius: 4px;
+    transition: all .15s var(--ease); align-self: flex-start;
+  }
+  .w-weather-unit-btn:hover {
+    background: var(--accent); color: var(--accent-fg);
+  }
+  .w-weather-desc {
+    font-size: 12.5px; font-weight: 500; color: var(--fg-2);
+    text-transform: capitalize;
+  }
+  .w-weather-range {
+    font-size: 10.5px; color: var(--muted); font-family: var(--mono);
+    display: flex; gap: 6px; margin-top: 1px;
+  }
+  .w-weather-right {
+    text-align: right; display: flex; flex-direction: column;
+    align-items: flex-end; gap: 2px;
+  }
+  .w-weather-loc {
+    font-size: 12px; font-weight: 500; color: var(--fg);
+    display: inline-flex; align-items: center; gap: 4px;
+    max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .w-weather-feels {
+    font-size: 11px; color: var(--dim); font-family: var(--mono);
+  }
+
+  /* Micro-Metrics Grid */
+  .w-weather-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+    background: var(--panel-hi); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 7px 9px;
+  }
+  .w-weather-metric {
+    display: flex; flex-direction: column; gap: 1px;
+  }
+  .w-weather-metric-lbl {
+    font-size: 9.5px; color: var(--dim); text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .w-weather-metric-val {
+    font-size: 11px; font-weight: 500; font-family: var(--mono);
+    color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* Multi-Day Forecast Strip */
+  .w-weather-forecast {
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    padding-top: 8px; border-top: 1px solid var(--border);
+  }
+  .w-weather-day {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 5px 3px; border-radius: var(--radius-sm); background: var(--panel-2);
+    border: 1px solid var(--border); text-align: center;
+  }
+  .w-weather-day-name {
+    font-size: 10px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.03em;
+  }
+  .w-weather-day-ico {
+    font-size: 15px; line-height: 1;
+  }
+  .w-weather-day-temp {
+    font-size: 10.5px; font-family: var(--mono); color: var(--fg); font-weight: 500;
+  }
+  .w-weather-day-pop {
+    font-size: 9px; font-family: var(--mono); color: var(--accent);
+  }
 
   /* github */
   .w-github { display: flex; flex-direction: column; gap: 7px; }

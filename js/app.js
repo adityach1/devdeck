@@ -137,6 +137,51 @@ function getAnalogClockSvg(hourDeg, minDeg, secDeg) {
   </svg>`;
 }
 
+/* ---------- Weather Helpers ---------- */
+function getWeatherCondition(code, isDay) {
+  const isNight = isDay === 0;
+  switch (code) {
+    case 0: return { ico: isNight ? "🌙" : "☀️", text: isNight ? "Clear night" : "Clear sky" };
+    case 1: return { ico: isNight ? "🌤️" : "🌤️", text: "Mainly clear" };
+    case 2: return { ico: isNight ? "☁️" : "⛅", text: "Partly cloudy" };
+    case 3: return { ico: "☁️", text: "Overcast" };
+    case 45: return { ico: "🌫️", text: "Foggy" };
+    case 48: return { ico: "🌫️", text: "Rime fog" };
+    case 51: return { ico: "🌦️", text: "Light drizzle" };
+    case 53: return { ico: "🌦️", text: "Drizzle" };
+    case 55: return { ico: "🌧️", text: "Heavy drizzle" };
+    case 56:
+    case 57: return { ico: "🌧️", text: "Freezing drizzle" };
+    case 61: return { ico: "🌧️", text: "Light rain" };
+    case 63: return { ico: "🌧️", text: "Moderate rain" };
+    case 65: return { ico: "🌧️", text: "Heavy rain" };
+    case 66:
+    case 67: return { ico: "🌧️", text: "Freezing rain" };
+    case 71: return { ico: "🌨️", text: "Light snow" };
+    case 73: return { ico: "🌨️", text: "Snow" };
+    case 75: return { ico: "🌨️", text: "Heavy snow" };
+    case 77: return { ico: "🌨️", text: "Snow grains" };
+    case 80:
+    case 81: return { ico: "🌦️", text: "Rain showers" };
+    case 82: return { ico: "🌧️", text: "Heavy showers" };
+    case 85:
+    case 86: return { ico: "🌨️", text: "Snow showers" };
+    case 95: return { ico: "⛈️", text: "Thunderstorm" };
+    case 96:
+    case 99: return { ico: "⛈️", text: "Severe thunderstorm" };
+    default: return { ico: isNight ? "🌙" : "⛅", text: "Fair" };
+  }
+}
+
+function getUvLevel(uv) {
+  if (uv == null) return "—";
+  if (uv < 3) return "Low";
+  if (uv < 6) return "Mod";
+  if (uv < 8) return "High";
+  if (uv < 11) return "Very High";
+  return "Extreme";
+}
+
 const WIDGETS = {
 
   /* ---------- Clock ---------- */
@@ -404,42 +449,247 @@ const WIDGETS = {
   weather: {
     name: "Weather",
     icon: "☀️",
-    desc: "Current weather via Open-Meteo (no API key).",
-    defaults: { lat: 28.689560383588127, lon: 77.29471663673375, place: "New Delhi" },
+    desc: "Enriched weather, live telemetry, and 3-day forecast via Open-Meteo.",
+    defaults: {
+      lat: 28.689560383588127,
+      lon: 77.29471663673375,
+      place: "New Delhi",
+      unit: "C",
+      showForecast: true,
+      showMetrics: true
+    },
     refresh: 600000,
     config: (c) => `
+      <div class="wrow">
+        <label style="flex:1">Search city / place</label>
+        <div style="display:flex;gap:6px;flex:2">
+          <input type="text" id="wGeoQuery" placeholder="e.g. London, Tokyo, New York, Delhi"/>
+          <button type="button" id="wGeoSearch" class="ghost" style="white-space:nowrap">🔍 Find</button>
+          <button type="button" id="wGeoAuto" class="ghost" title="Detect location automatically" style="white-space:nowrap">📍 Auto</button>
+        </div>
+      </div>
+      <div id="wGeoHint" style="font-size:11px;color:var(--dim);margin:-4px 0 8px"></div>
       <div class="wrow"><label style="flex:1">Place label</label><input type="text" data-k="place" value="${escapeHtml(c.place||"")}"/></div>
       <div class="wrow"><label style="flex:1">Latitude</label><input type="text" data-k="lat" value="${c.lat}"/></div>
       <div class="wrow"><label style="flex:1">Longitude</label><input type="text" data-k="lon" value="${c.lon}"/></div>
-      <p style="font-size:11px;color:var(--dim);margin-top:6px">Tip: get coords from openstreetmap.org — right-click → "Show address".</p>`,
+      <div class="wrow"><label style="flex:1">Temperature unit</label>
+        <select data-k="unit">
+          <option value="C" ${c.unit !== "F" ? "selected" : ""}>Celsius (°C, km/h)</option>
+          <option value="F" ${c.unit === "F" ? "selected" : ""}>Fahrenheit (°F, mph)</option>
+        </select>
+      </div>
+      <div class="wrow"><label style="flex:1">Show 3-day forecast</label>
+        <input type="checkbox" data-k="showForecast" ${c.showForecast !== false ? "checked" : ""}/>
+      </div>
+      <div class="wrow"><label style="flex:1">Show metrics grid (Humidity, Wind, UV, Sun)</label>
+        <input type="checkbox" data-k="showMetrics" ${c.showMetrics !== false ? "checked" : ""}/>
+      </div>`,
+    postConfig: (formEl) => {
+      const qInput = formEl.querySelector("#wGeoQuery");
+      const searchBtn = formEl.querySelector("#wGeoSearch");
+      const autoBtn = formEl.querySelector("#wGeoAuto");
+      const hintEl = formEl.querySelector("#wGeoHint");
+      const placeInput = formEl.querySelector('[data-k="place"]');
+      const latInput = formEl.querySelector('[data-k="lat"]');
+      const lonInput = formEl.querySelector('[data-k="lon"]');
+
+      if (searchBtn && qInput) {
+        const doSearch = async () => {
+          const q = qInput.value.trim();
+          if (!q) return;
+          if (hintEl) { hintEl.textContent = "Searching…"; hintEl.style.color = "var(--dim)"; }
+          try {
+            const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=en&format=json`);
+            const data = await r.json();
+            if (data.results && data.results.length > 0) {
+              const res = data.results[0];
+              const name = `${res.name}${res.country ? ", " + res.country : ""}`;
+              if (placeInput) placeInput.value = name;
+              if (latInput) latInput.value = res.latitude.toFixed(4);
+              if (lonInput) lonInput.value = res.longitude.toFixed(4);
+              if (hintEl) {
+                hintEl.textContent = `✓ Found ${name} (${res.latitude.toFixed(2)}°, ${res.longitude.toFixed(2)}°)`;
+                hintEl.style.color = "var(--green)";
+              }
+            } else if (hintEl) {
+              hintEl.textContent = "✗ No matching place found";
+              hintEl.style.color = "var(--red)";
+            }
+          } catch (err) {
+            if (hintEl) {
+              hintEl.textContent = "✗ Geocoding error: " + err.message;
+              hintEl.style.color = "var(--red)";
+            }
+          }
+        };
+        searchBtn.onclick = doSearch;
+        qInput.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); doSearch(); } };
+      }
+
+      if (autoBtn) {
+        autoBtn.onclick = () => {
+          if (!navigator.geolocation) {
+            if (hintEl) { hintEl.textContent = "✗ Geolocation not supported"; hintEl.style.color = "var(--red)"; }
+            return;
+          }
+          if (hintEl) { hintEl.textContent = "Detecting GPS position…"; hintEl.style.color = "var(--dim)"; }
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              if (latInput) latInput.value = pos.coords.latitude.toFixed(4);
+              if (lonInput) lonInput.value = pos.coords.longitude.toFixed(4);
+              if (placeInput && (!placeInput.value || placeInput.value === "New Delhi")) {
+                placeInput.value = "Current Location";
+              }
+              if (hintEl) {
+                hintEl.textContent = `✓ Position detected (${pos.coords.latitude.toFixed(2)}°, ${pos.coords.longitude.toFixed(2)}°)`;
+                hintEl.style.color = "var(--green)";
+              }
+            },
+            (err) => {
+              if (hintEl) {
+                hintEl.textContent = "✗ Could not detect location: " + err.message;
+                hintEl.style.color = "var(--red)";
+              }
+            },
+            { timeout: 10000 }
+          );
+        };
+      }
+    },
     readConfig: (el) => ({
-      place: el.querySelector('[data-k="place"]').value,
+      place: el.querySelector('[data-k="place"]').value.trim(),
       lat: parseFloat(el.querySelector('[data-k="lat"]').value) || 0,
-      lon: parseFloat(el.querySelector('[data-k="lon"]').value) || 0
+      lon: parseFloat(el.querySelector('[data-k="lon"]').value) || 0,
+      unit: el.querySelector('[data-k="unit"]').value,
+      showForecast: el.querySelector('[data-k="showForecast"]').checked,
+      showMetrics: el.querySelector('[data-k="showMetrics"]').checked
     }),
     render: async (el, c) => {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&current=temperature_2m,weather_code,wind_speed_10m&temperature_unit=celsius`;
+      const lat = parseFloat(c.lat) || 28.6895;
+      const lon = parseFloat(c.lon) || 77.2947;
+      const unit = c.unit === "F" ? "F" : "C";
+      const tempUnitParam = unit === "F" ? "fahrenheit" : "celsius";
+      const windUnitParam = unit === "F" ? "mph" : "kmh";
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,surface_pressure&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,uv_index_max&temperature_unit=${tempUnitParam}&wind_speed_unit=${windUnitParam}&timezone=auto&forecast_days=4`;
+
       const r = await fetch(url);
+      if (!r.ok) throw new Error(`Weather API error (${r.status})`);
       const data = await r.json();
       const cur = data.current;
-      if (!cur) throw new Error("no data");
-      const codes = {
-        0:"☀️ clear", 1:"🌤 mainly clear", 2:"⛅ partly cloudy", 3:"☁️ overcast",
-        45:"🌫 fog", 48:"🌫 rime fog", 51:"🌦 light drizzle", 53:"🌦 drizzle", 55:"🌧 heavy drizzle",
-        61:"🌧 light rain", 63:"🌧 rain", 65:"🌧 heavy rain", 71:"🌨 light snow", 73:"🌨 snow", 75:"🌨 heavy snow",
-        80:"🌦 rain showers", 81:"🌦 showers", 82:"⛈ heavy showers", 95:"⛈ thunderstorm", 96:"⛈ thunder+hail", 99:"⛈ severe"
-      };
-      const cond = codes[cur.weather_code] || "—";
-      const ico = cond.split(" ")[0];
-      const desc = cond.split(" ").slice(1).join(" ");
-      el.innerHTML = `<div class="w-weather">
-        <div class="ico-big">${ico}</div>
-        <div>
-          <div class="temp">${Math.round(cur.temperature_2m)}°</div>
-          <div class="cond">${desc}</div>
-          <div class="loc">${escapeHtml(c.place)} · ${cur.wind_speed_10m} km/h</div>
-        </div>
-      </div>`;
+      const daily = data.daily;
+      if (!cur) throw new Error("no weather data");
+
+      const cond = getWeatherCondition(cur.weather_code, cur.is_day);
+      const temp = Math.round(cur.temperature_2m);
+      const feelsLike = Math.round(cur.apparent_temperature);
+      const windSpeed = Math.round(cur.wind_speed_10m);
+      const windUnit = unit === "F" ? "mph" : "km/h";
+      const humidity = cur.relative_humidity_2m ?? "--";
+      const pressure = Math.round(cur.surface_pressure ?? 1013);
+
+      // Today's high/low
+      const todayMax = daily && daily.temperature_2m_max ? Math.round(daily.temperature_2m_max[0]) : null;
+      const todayMin = daily && daily.temperature_2m_min ? Math.round(daily.temperature_2m_min[0]) : null;
+      const todayPop = daily && daily.precipitation_probability_max ? daily.precipitation_probability_max[0] : null;
+      const todayUv = daily && daily.uv_index_max ? daily.uv_index_max[0] : null;
+
+      // Sunrise & Sunset
+      let sunStr = "";
+      if (daily && daily.sunrise && daily.sunset) {
+        const sr = daily.sunrise[0]?.split("T")[1] || "";
+        const ss = daily.sunset[0]?.split("T")[1] || "";
+        if (sr && ss) sunStr = `🌅 ${sr} · 🌇 ${ss}`;
+      }
+
+      // Build HTML
+      let html = `<div class="w-weather">`;
+
+      // Hero
+      html += `
+        <div class="w-weather-hero">
+          <div class="w-weather-left">
+            <div class="w-weather-ico" title="${cond.text}">${cond.ico}</div>
+            <div>
+              <div class="w-weather-temp-wrap">
+                <span class="temp">${temp}°</span>
+                <button class="w-weather-unit-btn" title="Toggle °C / °F">${unit}</button>
+              </div>
+              <div class="w-weather-desc">${cond.text}</div>
+              ${todayMax != null && todayMin != null ? `<div class="w-weather-range"><span>H: ${todayMax}°</span><span>L: ${todayMin}°</span></div>` : ""}
+            </div>
+          </div>
+          <div class="w-weather-right">
+            <div class="w-weather-loc" title="${escapeHtml(c.place || "Weather")}">📍 ${escapeHtml(c.place || "Weather")}</div>
+            <div class="w-weather-feels">Feels like ${feelsLike}°${unit}</div>
+            ${todayPop != null ? `<div style="font-size:11px;color:var(--accent);font-family:var(--mono)">🌧️ ${todayPop}% rain</div>` : ""}
+          </div>
+        </div>`;
+
+      // Metrics Grid
+      if (c.showMetrics !== false) {
+        html += `
+          <div class="w-weather-grid">
+            <div class="w-weather-metric">
+              <span class="w-weather-metric-lbl">Humidity</span>
+              <span class="w-weather-metric-val">💧 ${humidity}%</span>
+            </div>
+            <div class="w-weather-metric">
+              <span class="w-weather-metric-lbl">Wind</span>
+              <span class="w-weather-metric-val">💨 ${windSpeed} ${windUnit}</span>
+            </div>
+            <div class="w-weather-metric">
+              <span class="w-weather-metric-lbl">UV Index</span>
+              <span class="w-weather-metric-val">☀️ ${todayUv != null ? todayUv.toFixed(1) + " (" + getUvLevel(todayUv) + ")" : "—"}</span>
+            </div>
+            <div class="w-weather-metric">
+              <span class="w-weather-metric-lbl">Pressure</span>
+              <span class="w-weather-metric-val">⏲️ ${pressure} hPa</span>
+            </div>
+            <div class="w-weather-metric" style="grid-column: span 2">
+              <span class="w-weather-metric-lbl">Sun Cycle</span>
+              <span class="w-weather-metric-val">${sunStr || "—"}</span>
+            </div>
+          </div>`;
+      }
+
+      // 3-Day Forecast Strip
+      if (c.showForecast !== false && daily && daily.time && daily.time.length > 1) {
+        html += `<div class="w-weather-forecast">`;
+        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        for (let i = 1; i <= 3 && i < daily.time.length; i++) {
+          const dDate = new Date(daily.time[i] + "T12:00:00");
+          const dayName = i === 1 ? "Tmrw" : dayNames[dDate.getDay()];
+          const dCode = daily.weather_code[i];
+          const dCond = getWeatherCondition(dCode, 1);
+          const dMax = Math.round(daily.temperature_2m_max[i]);
+          const dMin = Math.round(daily.temperature_2m_min[i]);
+          const dPop = daily.precipitation_probability_max ? daily.precipitation_probability_max[i] : null;
+
+          html += `
+            <div class="w-weather-day" title="${dCond.text} · High ${dMax}°, Low ${dMin}°">
+              <span class="w-weather-day-name">${dayName}</span>
+              <span class="w-weather-day-ico">${dCond.ico}</span>
+              <span class="w-weather-day-temp">${dMax}°<span style="color:var(--dim);font-weight:400">/${dMin}°</span></span>
+              ${dPop != null ? `<span class="w-weather-day-pop">🌧️${dPop}%</span>` : ""}
+            </div>`;
+        }
+        html += `</div>`;
+      }
+
+      html += `</div>`;
+      el.innerHTML = html;
+
+      // Unit toggle button click handler
+      const unitBtn = el.querySelector(".w-weather-unit-btn");
+      if (unitBtn) {
+        unitBtn.onclick = (e) => {
+          e.stopPropagation();
+          c.unit = c.unit === "F" ? "C" : "F";
+          save();
+          renderWidgets();
+          toast(`Weather unit: °${c.unit}`);
+        };
+      }
     }
   },
 
@@ -1809,6 +2059,9 @@ function openWidgetMenu(id, card) {
       <button id="wDelete" class="ghost" style="color:var(--red);border-color:var(--red)">Delete widget</button>
     </div>
   `);
+  if (def.postConfig) {
+    def.postConfig(document.getElementById("wCfgForm"), w.config || {});
+  }
   if (def.config) {
     document.getElementById("wSave").onclick = () => {
       try {
