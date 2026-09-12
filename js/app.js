@@ -4016,8 +4016,19 @@ async function checkGoogleAuthRedirect() {
       cfg.googleAuth.email = info.email || "";
       cfg.googleAuth.name = info.name || "";
       cfg.googleAuth.picture = info.picture || "";
+
+      try {
+        const tinfoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(token)}`);
+        if (tinfoRes.ok) {
+          const tinfo = await tinfoRes.json();
+          cfg.googleAuth.scopes = tinfo.scope || "";
+          cfg.googleAuth.hasHomePlatform = (tinfo.scope || "").includes("home.platform.v2");
+        }
+      } catch {}
+
       save();
-      toast(`Google Account Connected: ${info.email}`);
+      const scopeTag = cfg.googleAuth.hasHomePlatform ? " (Home Platform v2 Authorized)" : "";
+      toast(`Google Account Connected: ${info.email}${scopeTag}`);
       history.replaceState(null, "", window.location.pathname + window.location.search);
       if (sessionStorage.getItem("ghome_oauth_pending")) {
         sessionStorage.removeItem("ghome_oauth_pending");
@@ -4030,14 +4041,20 @@ async function checkGoogleAuthRedirect() {
 }
 
 async function syncGoogleDevices(onDone) {
-  const rawPid = (cfg.googleAuth?.projectId || "").trim();
-  if (!rawPid || !cfg.googleAuth?.accessToken) {
-    toast("Google Account connected. (Note: Google Cloud API only syncs Nest hardware; use Bulk Add or Google Home Web for other devices)", 5000);
+  const auth = cfg.googleAuth || {};
+  const rawPid = (auth.projectId || "").trim();
+  const token = auth.accessToken;
+
+  if (!token) {
+    toast("Google Account not connected");
     if (onDone) onDone();
     return;
   }
-  const cleanPid = rawPid.startsWith("enterprises/") ? rawPid.replace("enterprises/", "") : rawPid;
-  const url = `https://smartdevicemanagement.googleapis.com/v1/enterprises/${encodeURIComponent(cleanPid)}/devices`;
+
+  // 1. If Nest enterprise project ID provided, query SDM API
+  if (rawPid) {
+    const cleanPid = rawPid.startsWith("enterprises/") ? rawPid.replace("enterprises/", "") : rawPid;
+    const url = `https://smartdevicemanagement.googleapis.com/v1/enterprises/${encodeURIComponent(cleanPid)}/devices`;
 
   try {
     toast("Syncing devices from Google…");
@@ -4098,13 +4115,22 @@ async function syncGoogleDevices(onDone) {
       }
     });
 
-    save();
-    toast(`Refreshed ${syncedCount} Google devices`);
-    if (onDone) onDone();
-  } catch (e) {
-    toast("Google Home devices refreshed");
-    if (onDone) onDone();
+      save();
+      toast(`Refreshed ${syncedCount} Google devices`);
+      if (onDone) onDone();
+      return;
+    } catch (e) {
+      console.warn("Nest SDM error", e);
+    }
   }
+
+  // Home Platform v2 feedback
+  if (auth.hasHomePlatform) {
+    toast("Google Home Platform v2 authorized! (Manage devices live via Google Home Web or Bulk Add)", 5000);
+  } else {
+    toast("Google Account connected. (Click Disconnect & re-sign in to authorize Home Platform v2 scope)", 5000);
+  }
+  if (onDone) onDone();
 }
 
 function parseBulkDeviceLine(line) {
@@ -4370,6 +4396,7 @@ function toolGoogleHome() {
               <span class="ghome-user-name">
                 ${escapeHtml(auth.name || "Google User")}
                 <span class="ghome-badge-connected">● Connected</span>
+                ${auth.hasHomePlatform ? `<span style="font-size:10px;color:var(--green);background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);padding:1px 6px;border-radius:4px;font-weight:500">🏠 Home Platform v2</span>` : ""}
               </span>
               <span class="ghome-user-email">${escapeHtml(auth.email || "Google Account")}</span>
             </div>
@@ -4388,7 +4415,11 @@ function toolGoogleHome() {
         </div>
 
         <div style="margin-top:8px;padding:6px 10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:4px;font-size:10.5px;color:var(--dim);line-height:1.4">
-          💡 <strong>Google API Limitation:</strong> Google only allows Nest hardware via API sync. To control all your third-party bulbs and plugs live, use <a href="https://home.google.com/" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline">Google Home Web ↗</a> or use <strong>Bulk Add</strong> below.
+          ${auth.hasHomePlatform ? `
+            <span>🟢 <strong>Home Platform v2 Active:</strong> Google Home Platform authorization is connected! View & control all your live devices on <a href="https://home.google.com/" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline">Google Home Web ↗</a> or manage switches in DevDeck with <strong>Bulk Add</strong>.</span>
+          ` : `
+            <span>💡 <strong>Tip:</strong> Click <strong>Disconnect</strong> and re-sign in to grant the sensitive <code>home.platform.v2</code> scope configured in your Google Cloud Console.</span>
+          `}
         </div>
 
         <div id="ghomeSettingsBox" style="display:${showAuthForm ? "block" : "none"};margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
@@ -4435,6 +4466,8 @@ function toolGoogleHome() {
           auth.email = "";
           auth.name = "";
           auth.picture = "";
+          auth.hasHomePlatform = false;
+          auth.scopes = "";
           save();
           toast("Google Account disconnected");
           renderModalView();
@@ -4484,10 +4517,10 @@ function toolGoogleHome() {
         <div id="ghomeGuideBox" class="ghome-guide-box" style="display:${showGuide ? "block" : "none"}">
           <strong>Google Home Device Management & Cloud Sync:</strong>
           <ul style="margin:4px 0 8px 16px;padding:0">
-            <li><strong>Why aren't third-party bulbs auto-synced?</strong> Google does not offer a public consumer API for third-party smart bulbs/plugs (Tuya, Tapo, Philips Hue, Wipro, etc.) added in Google Home. Only Google Nest hardware (Nest Thermostats, Cams) has a Cloud API (SDM).</li>
-            <li><strong>Google Home Web (Live View)</strong>: Open <a href="https://home.google.com/" target="_blank" rel="noopener" style="color:var(--accent)">Google Home Web ↗</a> anytime to view, switch, and stream all your connected Google Home devices live in your browser.</li>
-            <li><strong>Quick Setup in DevDeck</strong>: Click <strong>📋 Bulk Add</strong> to quickly paste your actual home devices (or <strong>+ Add Device</strong>) to control switches, brightness, and scenes right from DevDeck.</li>
-            <li><strong>Clear Samples</strong>: Click <strong>🧹 Clear Samples</strong> to wipe out the pre-populated demo devices with 1 click.</li>
+            <li><strong>Scopes Supported:</strong> Includes <code>home.platform.v2</code> to access and manage your Google Home data and devices.</li>
+            <li><strong>Google Home Web (Live View):</strong> Open <a href="https://home.google.com/" target="_blank" rel="noopener" style="color:var(--accent)">Google Home Web ↗</a> anytime to view, switch, and stream all your connected Google Home devices live in your browser.</li>
+            <li><strong>Quick Setup in DevDeck:</strong> Click <strong>📋 Bulk Add</strong> to quickly paste your actual home devices (or <strong>+ Add Device</strong>) to control switches, brightness, and scenes right from DevDeck.</li>
+            <li><strong>Clear Samples:</strong> Click <strong>🧹 Clear Samples</strong> to wipe out the pre-populated demo devices with 1 click.</li>
           </ul>
         </div>
       `;
@@ -4502,8 +4535,14 @@ function toolGoogleHome() {
         }
         sessionStorage.setItem("ghome_oauth_pending", "1");
         const redirectUri = window.location.origin + window.location.pathname;
-        const scope = encodeURIComponent("https://www.googleapis.com/auth/sdm.service email profile openid");
-        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(cid)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${scope}&prompt=consent`;
+        const scopes = [
+          "https://www.googleapis.com/auth/home.platform.v2",
+          "https://www.googleapis.com/auth/sdm.service",
+          "https://www.googleapis.com/auth/userinfo.email",
+          "https://www.googleapis.com/auth/userinfo.profile",
+          "openid"
+        ].join(" ");
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(cid)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(scopes)}&prompt=consent`;
         window.location.href = authUrl;
       };
 
@@ -4538,8 +4577,19 @@ function toolGoogleHome() {
                 auth.email = info.email || "Google Account";
                 auth.name = info.name || "";
                 auth.picture = info.picture || "";
+
+                try {
+                  const tinfoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(tok)}`);
+                  if (tinfoRes.ok) {
+                    const tinfo = await tinfoRes.json();
+                    auth.scopes = tinfo.scope || "";
+                    auth.hasHomePlatform = (tinfo.scope || "").includes("home.platform.v2");
+                  }
+                } catch {}
+
                 save();
-                toast(`Connected as ${info.email}`);
+                const scopeTag = auth.hasHomePlatform ? " (Home Platform v2)" : "";
+                toast(`Connected as ${info.email}${scopeTag}`);
                 renderModalView();
                 return;
               }
