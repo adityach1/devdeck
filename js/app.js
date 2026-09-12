@@ -4217,50 +4217,77 @@ function toolGoogleHome() {
     </div>
 
     <!-- Add/Edit Device Form -->
-    <div id="ghomeDevForm" style="display:none;background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px">
-      <div style="font-size:13px;font-weight:600;margin-bottom:10px" id="ghomeFormHeading">Add Smart Device</div>
-      <input type="hidden" id="ghomeFormId">
-      <div class="field" style="margin-bottom:8px">
-        <label>Device Name</label>
-        <input type="text" id="ghomeFormName" placeholder="e.g. Studio Light, AC, Workstation Plug">
+    <div id="ghomeDevForm" class="ghome-panel-form" style="display:none">
+      <div class="ghome-form-header">
+        <div class="ghome-form-title">
+          <span id="ghomeFormIcon">✨</span>
+          <span id="ghomeFormHeading">Add Smart Device</span>
+        </div>
+        <button id="ghomeFormCloseBtn" class="ghome-form-close" title="Close">✕</button>
       </div>
-      <div class="row" style="margin-bottom:8px;gap:8px">
+      <input type="hidden" id="ghomeFormId">
+      <div class="field" style="margin-bottom:10px">
+        <label style="font-size:11px;font-weight:600;color:var(--fg);display:block;margin-bottom:4px">Device Name</label>
+        <input type="text" id="ghomeFormName" placeholder="e.g. Studio Light, AC, Workstation Plug" style="padding:7px 10px;font-size:12px;background:var(--panel);border:1px solid var(--border);border-radius:6px;color:var(--fg);width:100%">
+      </div>
+      <div class="row" style="margin-bottom:10px;gap:10px">
         <div style="flex:1">
-          <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:4px">Device Type</label>
-          <select id="ghomeFormType" style="width:100%;padding:6px;background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--fg)">
-            <option value="light">Light (💡)</option>
-            <option value="plug">Smart Plug / Outlet (🔌)</option>
-            <option value="thermostat">Thermostat (🌡️)</option>
-            <option value="speaker">Speaker / Audio (🔊)</option>
-            <option value="lock">Smart Lock (🔒)</option>
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--fg);margin-bottom:4px">Device Type</label>
+          <select id="ghomeFormType" style="width:100%;padding:7px 8px;background:var(--panel);border:1px solid var(--border);border-radius:6px;color:var(--fg);font-size:12px">
+            <option value="light">💡 Light</option>
+            <option value="plug">🔌 Smart Plug / Outlet</option>
+            <option value="thermostat">🌡️ Thermostat / AC</option>
+            <option value="speaker">🔊 Speaker / Audio</option>
+            <option value="lock">🔒 Smart Lock</option>
           </select>
         </div>
         <div style="flex:1">
-          <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:4px">Room</label>
-          <input type="text" id="ghomeFormRoom" placeholder="e.g. Office, Living Room" style="width:100%;padding:6px;background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--fg)">
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--fg);margin-bottom:4px">Room</label>
+          <input type="text" id="ghomeFormRoom" placeholder="e.g. Living Room, Office" style="width:100%;padding:7px 10px;background:var(--panel);border:1px solid var(--border);border-radius:6px;color:var(--fg);font-size:12px">
+          <div class="ghome-room-chips">
+            <span class="ghome-room-chip" data-chip="Office">Office</span>
+            <span class="ghome-room-chip" data-chip="Living Room">Living Room</span>
+            <span class="ghome-room-chip" data-chip="Bedroom">Bedroom</span>
+            <span class="ghome-room-chip" data-chip="Kitchen">Kitchen</span>
+            <span class="ghome-room-chip" data-chip="Balcony">Balcony</span>
+          </div>
         </div>
       </div>
-      <div class="field" style="margin-bottom:10px">
-        <label>Webhook URL (Optional - Home Assistant / IoT endpoint)</label>
-        <input type="url" id="ghomeFormWebhook" placeholder="https://homeassistant.local/api/webhook/...">
+      <div class="field" style="margin-bottom:12px">
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Webhook URL (Optional — triggers IoT or Home Assistant endpoint)</label>
+        <input type="url" id="ghomeFormWebhook" placeholder="https://homeassistant.local/api/webhook/..." style="padding:6px 10px;font-size:11px;background:var(--panel);border:1px solid var(--border);border-radius:6px;color:var(--fg);width:100%">
       </div>
-      <div class="row" style="gap:8px">
-        <button id="ghomeFormSave">Save Device</button>
-        <button id="ghomeFormCancel" class="ghost">Cancel</button>
+      <div class="row" style="gap:8px;justify-content:flex-end">
+        <button id="ghomeFormCancel" class="ghost" style="font-size:12px;padding:6px 14px">Cancel</button>
+        <button id="ghomeFormSave" class="ghome-action-btn ghome-btn-add" style="font-size:12px;padding:6px 16px">Save Device</button>
       </div>
     </div>
 
     <!-- Bulk Add Form -->
-    <div id="ghomeBulkForm" style="display:none;background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px">
-      <div style="font-size:13px;font-weight:600;margin-bottom:4px">📋 Quick Bulk Add Devices</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.4">
-        Paste your Google Home device names (one per line). Format: <code>Name, Type (light|plug|thermostat|speaker|lock), Room</code><br>
-        <em>Examples:</em> <code>Living Room Light, light, Living Room</code> or <code>Bedroom AC, plug, Bedroom</code> or just <code>Desk Fan</code>
+    <div id="ghomeBulkForm" class="ghome-panel-form" style="display:none">
+      <div class="ghome-form-header">
+        <div class="ghome-form-title">
+          <span>📋</span>
+          <span>Quick Bulk Add Devices</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button id="ghomeBulkExampleBtn" class="ghome-action-btn" style="font-size:10.5px;padding:3px 8px;background:var(--panel);border:1px solid var(--border);color:var(--accent);cursor:pointer">
+            🪄 Insert Example
+          </button>
+          <button id="ghomeBulkCloseBtn" class="ghome-form-close" title="Close">✕</button>
+        </div>
       </div>
-      <textarea id="ghomeBulkText" rows="5" placeholder="Living Room Light, light, Living Room&#10;Bedroom AC, plug, Bedroom&#10;Study Lamp, light, Office&#10;Desk Fan, plug, Office" style="width:100%;padding:8px;font-size:11px;font-family:var(--mono);background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--fg);resize:vertical;margin-bottom:10px"></textarea>
-      <div class="row" style="gap:8px">
-        <button id="ghomeBulkSubmit" style="font-size:12px;padding:5px 12px">Add Devices</button>
-        <button id="ghomeBulkClose" class="ghost" style="font-size:12px;padding:5px 12px">Cancel</button>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5">
+        Paste your devices below (one per line). Format: <span class="ghome-syntax-pill">Name, Type, Room</span>
+        <div style="font-size:10px;color:var(--dim);margin-top:2px">Types: <code>light</code>, <code>plug</code>, <code>thermostat</code>, <code>speaker</code>, <code>lock</code>. <em>Device type is automatically inferred if omitted!</em></div>
+      </div>
+      <textarea id="ghomeBulkText" rows="6" placeholder="Living Room Light, light, Living Room&#10;Bedroom AC, plug, Bedroom&#10;Study Lamp, light, Office&#10;Desk Fan, plug, Office" style="width:100%;padding:10px;font-size:11.5px;font-family:var(--mono);line-height:1.5;background:var(--panel);border:1px solid var(--border);border-radius:6px;color:var(--fg);resize:vertical;margin-bottom:10px"></textarea>
+      <div class="row" style="gap:8px;justify-content:space-between;align-items:center">
+        <span id="ghomeBulkCounter" style="font-size:11px;color:var(--dim);font-family:var(--mono)"></span>
+        <div style="display:flex;gap:8px">
+          <button id="ghomeBulkClose" class="ghost" style="font-size:12px;padding:6px 14px">Cancel</button>
+          <button id="ghomeBulkSubmit" class="ghome-action-btn ghome-btn-add" style="font-size:12px;padding:6px 18px">Add All Devices</button>
+        </div>
       </div>
     </div>
 
@@ -4293,6 +4320,13 @@ function toolGoogleHome() {
   const bulkForm = document.getElementById("ghomeBulkForm");
   const bulkText = document.getElementById("ghomeBulkText");
 
+  function updateBarActiveStates() {
+    const addBtn = document.getElementById("ghomeAddToggle");
+    const bulkBtn = document.getElementById("ghomeBulkToggle");
+    if (addBtn) addBtn.classList.toggle("active", formEl && formEl.style.display !== "none");
+    if (bulkBtn) bulkBtn.classList.toggle("active", bulkForm && bulkForm.style.display !== "none");
+  }
+
   function openAddForm() {
     formId.value = "";
     formName.value = "";
@@ -4300,23 +4334,69 @@ function toolGoogleHome() {
     formRoom.value = filterRoom !== "all" ? filterRoom : "Office";
     formWebhook.value = "";
     formHeading.textContent = "Add Smart Device";
+    const iconEl = document.getElementById("ghomeFormIcon");
+    if (iconEl) iconEl.textContent = "✨";
     bulkForm.style.display = "none";
-    formEl.style.display = formEl.style.display === "none" ? "block" : "none";
-    if (formEl.style.display === "block") formName.focus();
+    const isOpen = formEl.style.display !== "none";
+    formEl.style.display = isOpen ? "none" : "block";
+    updateBarActiveStates();
+    if (!isOpen) formName.focus();
   }
 
   function openBulkForm() {
     formEl.style.display = "none";
-    bulkForm.style.display = bulkForm.style.display === "none" ? "block" : "none";
-    if (bulkForm.style.display === "block") bulkText.focus();
+    const isOpen = bulkForm.style.display !== "none";
+    bulkForm.style.display = isOpen ? "none" : "block";
+    updateBarActiveStates();
+    if (!isOpen) {
+      updateBulkCounter();
+      bulkText.focus();
+    }
   }
+
+  function updateBulkCounter() {
+    const counter = document.getElementById("ghomeBulkCounter");
+    if (!counter) return;
+    const lines = bulkText.value.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    counter.textContent = lines.length ? `${lines.length} device${lines.length === 1 ? "" : "s"} ready to add` : "";
+  }
+  bulkText.oninput = updateBulkCounter;
+
+  const exampleBtn = document.getElementById("ghomeBulkExampleBtn");
+  if (exampleBtn) {
+    exampleBtn.onclick = () => {
+      bulkText.value = `Living Room Light, light, Living Room
+Bedroom AC, plug, Bedroom
+Study Lamp, light, Office
+Workstation PC, plug, Office
+Kitchen Spotlight, light, Kitchen
+Balcony Light, light, Balcony`;
+      updateBulkCounter();
+      bulkText.focus();
+    };
+  }
+
+  document.querySelectorAll(".ghome-room-chip").forEach(chip => {
+    chip.onclick = () => {
+      formRoom.value = chip.dataset.chip;
+      formRoom.focus();
+    };
+  });
+
+  const formCloseBtn = document.getElementById("ghomeFormCloseBtn");
+  if (formCloseBtn) formCloseBtn.onclick = () => { formEl.style.display = "none"; updateBarActiveStates(); };
+
+  const bulkCloseBtn = document.getElementById("ghomeBulkCloseBtn");
+  if (bulkCloseBtn) bulkCloseBtn.onclick = () => { bulkForm.style.display = "none"; updateBarActiveStates(); };
 
   document.getElementById("ghomeFormCancel").onclick = () => {
     formEl.style.display = "none";
+    updateBarActiveStates();
   };
 
   document.getElementById("ghomeBulkClose").onclick = () => {
     bulkForm.style.display = "none";
+    updateBarActiveStates();
   };
 
   document.getElementById("ghomeBulkSubmit").onclick = () => {
@@ -4628,21 +4708,30 @@ function toolGoogleHome() {
     const hasDevices = allDevices.length > 0;
 
     barActions.innerHTML = `
-      <button id="ghomeAddToggle" style="font-size:12px;padding:5px 11px">+ Add Device</button>
-      <button id="ghomeBulkToggle" class="ghost" style="font-size:12px;padding:5px 11px">📋 Bulk Add</button>
+      <button id="ghomeAddToggle" class="ghome-action-btn ghome-btn-add" title="Add a single smart device">
+        <span class="ghome-btn-icon">＋</span>
+        <span>Add Device</span>
+      </button>
+      <button id="ghomeBulkToggle" class="ghome-action-btn ghome-btn-bulk" title="Paste multiple devices at once">
+        <span class="ghome-btn-icon">📋</span>
+        <span>Bulk Add</span>
+      </button>
       ${hasSamples ? `
-        <button id="ghomeClearSamplesBtn" class="ghost" style="font-size:12px;padding:5px 9px;color:var(--yellow);border-color:rgba(234,179,8,0.4)" title="Remove built-in sample devices">
-          🧹 Clear Samples
+        <button id="ghomeClearSamplesBtn" class="ghome-action-btn ghome-btn-clear" title="Remove the built-in demo devices">
+          <span class="ghome-btn-icon">🧹</span>
+          <span>Clear Samples</span>
         </button>
       ` : (hasDevices ? `
-        <button id="ghomeClearAllBtn" class="ghost" style="font-size:12px;padding:5px 9px;color:var(--red);border-color:rgba(239,68,68,0.4)" title="Remove all devices">
-          🗑️ Clear All
+        <button id="ghomeClearAllBtn" class="ghome-action-btn ghome-btn-danger" title="Remove all smart devices">
+          <span class="ghome-btn-icon">🗑️</span>
+          <span>Clear All</span>
         </button>
       ` : "")}
     `;
 
     document.getElementById("ghomeAddToggle").onclick = openAddForm;
     document.getElementById("ghomeBulkToggle").onclick = openBulkForm;
+    updateBarActiveStates();
 
     const clearSamplesBtn = document.getElementById("ghomeClearSamplesBtn");
     if (clearSamplesBtn) {
@@ -4716,8 +4805,14 @@ function toolGoogleHome() {
               Add your Google Home devices to control switches, brightness, and scenes right from DevDeck, or view them live on Google Home Web.
             </div>
             <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-              <button id="ghomeEmptyAddBtn" style="font-size:12px;padding:6px 14px">+ Add Device</button>
-              <button id="ghomeEmptyBulkBtn" class="ghost" style="font-size:12px;padding:6px 14px">📋 Bulk Add Devices</button>
+              <button id="ghomeEmptyAddBtn" class="ghome-action-btn ghome-btn-add">
+                <span class="ghome-btn-icon">＋</span>
+                <span>Add Device</span>
+              </button>
+              <button id="ghomeEmptyBulkBtn" class="ghome-action-btn ghome-btn-bulk">
+                <span class="ghome-btn-icon">📋</span>
+                <span>Bulk Add Devices</span>
+              </button>
               <a href="https://home.google.com/" target="_blank" rel="noopener" class="ghome-web-btn" style="margin-left:0;font-size:12px;padding:6px 14px">🏠 Open Google Home Web ↗</a>
             </div>
           </div>
@@ -4817,7 +4912,11 @@ function toolGoogleHome() {
         formRoom.value = dev.room || "";
         formWebhook.value = dev.webhookUrl || "";
         formHeading.textContent = "Edit Smart Device";
+        const iconEl = document.getElementById("ghomeFormIcon");
+        if (iconEl) iconEl.textContent = "✏️";
+        bulkForm.style.display = "none";
         formEl.style.display = "block";
+        updateBarActiveStates();
         formName.focus();
       };
     });
