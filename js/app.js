@@ -4498,6 +4498,14 @@ function toolGoogleHome() {
           </div>
         </div>
 
+        <div style="margin-top:8px;padding-top:6px;border-top:1px dashed var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" id="ghomeScopePlatform" style="accent-color:var(--accent)">
+            <span>Include sensitive scope (<code>home.platform.v2</code>)</span>
+          </label>
+          <span style="font-size:10px;color:var(--dim)">Uncheck if Google gives "invalid_scope"</span>
+        </div>
+
         <!-- Token / OAuth Input Form -->
         <div id="ghomeTokenBox" style="display:${showAuthForm ? "block" : "none"};margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
           <div class="field" style="margin-bottom:8px">
@@ -4535,13 +4543,15 @@ function toolGoogleHome() {
         }
         sessionStorage.setItem("ghome_oauth_pending", "1");
         const redirectUri = window.location.origin + window.location.pathname;
-        const scopes = [
-          "https://www.googleapis.com/auth/home.platform.v2",
-          "https://www.googleapis.com/auth/sdm.service",
+        const wantPlatform = document.getElementById("ghomeScopePlatform")?.checked;
+        const scopesList = [
+          ...(wantPlatform ? ["https://www.googleapis.com/auth/home.platform.v2"] : []),
+          ...(auth.projectId ? ["https://www.googleapis.com/auth/sdm.service"] : []),
           "https://www.googleapis.com/auth/userinfo.email",
           "https://www.googleapis.com/auth/userinfo.profile",
           "openid"
-        ].join(" ");
+        ];
+        const scopes = scopesList.join(" ");
         const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(cid)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(scopes)}&prompt=consent`;
         window.location.href = authUrl;
       };
