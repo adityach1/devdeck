@@ -41,6 +41,7 @@
 - 📱 **Fully Responsive Viewport** — Fills 90%–95% of screen width comfortably across ultrawide displays, laptops, tablets, and smartphones.
 - 🔍 **Power Omnibar** — Multi-engine search switching, 20+ direct bang shortcuts, safe math evaluation, unit/currency conversions, and quick dev commands.
 - 🎛️ **Modular Widget Dashboard** — Live weather (New Delhi), clock, speed dial bookmarks, browser & system diagnostics, crypto tickers, RSS, countdowns, and Pomodoro focus timers.
+- 🏠 **Google Home & Smart Device Manager** — Interactive smart lights, plugs, thermostats, locks, and speakers control with one-click routines, webhook dispatch, and direct Google Home Web integration.
 - 🔐 **Encrypted Secrets Vault** — Client-side AES-256-GCM + PBKDF2 encrypted secret store & `.env` manager with memory session caching and auto-lock.
 - 🛠️ **Developer Toolbox** — DNS over HTTPS (DoH), cURL builder, Cron parser & upcoming runs calculator, Cryptographic Keygen, Base64, Hashes, JWT inspector, JSON formatter, and regex tester.
 - 📝 **Scratchpad & Notes** — Multi-buffer notes manager with live split Markdown preview and interactive checklists.
@@ -84,6 +85,7 @@ Jump directly to developer hubs and documentation:
 | `!w <q>` | Wikipedia | `!yt <q>` | YouTube |
 | `!hn <q>` | Hacker News (Algolia) | `!r <q>` | Reddit Search |
 | `!arxiv <q>` | arXiv Scientific Papers | `!maps <q>` | Google Maps |
+| `!ghome` | Google Home Web (`home.google.com`) | | |
 
 ### Inline Utilities & Math
 
@@ -123,6 +125,7 @@ The widget dashboard automatically organizes your view with zero configuration.
 
 Click the **`＋` Add Widget** button in the dashboard header to add any of these modular widgets:
 
+- **🏠 Google Home & Smart Devices** — Control smart lights, plugs, thermostats, speakers, and locks with room filters and one-click quick routines.
 - **🌍 World Clock** — Multi-timezone live display.
 - **🐙 GitHub Activity** — Recent pushes, repositories, and follower stats (supports personal access tokens).
 - **₿ Crypto Prices** — Live CoinGecko price tickers (BTC, ETH, SOL, etc.) in USD, EUR, INR, GBP, or JPY.
@@ -164,6 +167,8 @@ Access the comprehensive developer suite from the top navigation bar or keyboard
     - Full HTTP request runner with custom headers, query params, body editors, response headers, and performance metrics.
 12. **Markdown Scratchpad (`Alt+N`)**
     - Multi-buffer notes manager with live split Markdown preview and interactive task checklist toggles.
+13. **Google Home & Smart Devices Manager (Quick Tools → `Home`)**
+    - Manage smart lights, plugs, thermostats, audio, and locks; adjust brightness and temperature; trigger scenes; dispatch webhooks; and launch Google Home Web (`home.google.com`).
 
 ---
 

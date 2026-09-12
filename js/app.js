@@ -595,6 +595,40 @@ const WIDGETS = {
           }).join("")}
         </div>`;
     }
+  },
+
+  /* ---------- Google Home & Smart Devices ---------- */
+  googlehome: {
+    name: "Google Home",
+    icon: "🏠",
+    desc: "Monitor and control smart lights, plugs, thermostats, locks, and scenes with Google Home Web integration.",
+    defaults: {
+      filterRoom: "all",
+      showScenes: true,
+      compact: false
+    },
+    refresh: 0,
+    config: (c) => {
+      const rooms = ["all", ...new Set(getHomeDevices().map(d => d.room).filter(Boolean))];
+      return `
+        <div class="field">
+          <label>Filter by Room</label>
+          <select data-k="filterRoom">
+            ${rooms.map(r => `<option value="${escapeHtml(r)}" ${c.filterRoom === r ? "selected" : ""}>${r === "all" ? "All Rooms" : escapeHtml(r)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" data-k="showScenes" ${c.showScenes !== false ? "checked" : ""}>
+            Show Quick Routine Chips
+          </label>
+        </div>`;
+    },
+    readConfig: (el) => ({
+      filterRoom: el.querySelector('[data-k="filterRoom"]').value,
+      showScenes: el.querySelector('[data-k="showScenes"]').checked
+    }),
+    render: (el, c) => renderGoogleHomeWidget(el, c)
   }
 };
 
@@ -670,7 +704,8 @@ const DEFAULTS = {
     go:       { name: "Go Packages",   url: "https://pkg.go.dev/search?q={q}" },
     aw:       { name: "ArchWiki",      url: "https://wiki.archlinux.org/index.php?search={q}" },
     maps:     { name: "Google Maps",   url: "https://www.google.com/maps/search/{q}" },
-    arxiv:    { name: "arXiv",         url: "https://arxiv.org/search/?query={q}&searchtype=all" }
+    arxiv:    { name: "arXiv",         url: "https://arxiv.org/search/?query={q}&searchtype=all" },
+    ghome:    { name: "Google Home",   url: "https://home.google.com/" }
   },
   engines: {
     ddg:        { name: "DuckDuckGo", url: "https://duckduckgo.com/?q={q}" },
@@ -712,6 +747,39 @@ const DEFAULTS = {
   firstRun: true,
   apiRequests: [
     { id: "r1", name: "GitHub API", method: "GET", url: "https://api.github.com/users/octocat", headers: [{k:"Accept",v:"application/json"}], body: "" }
+  ],
+  homeDevices: [
+    { id: "hd-1", name: "Desk Lamp", type: "light", room: "Office", on: true, brightness: 80, webhookUrl: "" },
+    { id: "hd-2", name: "Monitor Lightbar", type: "light", room: "Office", on: false, brightness: 60, webhookUrl: "" },
+    { id: "hd-3", name: "Workstation PC", type: "plug", room: "Office", on: true, power: "145W", webhookUrl: "" },
+    { id: "hd-4", name: "Ceiling Light", type: "light", room: "Living Room", on: true, brightness: 100, webhookUrl: "" },
+    { id: "hd-5", name: "Nest Thermostat", type: "thermostat", room: "Hallway", on: true, targetTemp: 22, currentTemp: 21, unit: "°C", mode: "heat", webhookUrl: "" },
+    { id: "hd-6", name: "Nest Audio", type: "speaker", room: "Living Room", on: false, volume: 50, playing: false, webhookUrl: "" },
+    { id: "hd-7", name: "Front Door", type: "lock", room: "Entryway", on: true, locked: true, webhookUrl: "" }
+  ],
+  homeScenes: [
+    { id: "sc-1", name: "Focus Work", icon: "💻", actions: [
+      { id: "hd-1", on: true, brightness: 80 },
+      { id: "hd-2", on: true, brightness: 70 },
+      { id: "hd-3", on: true }
+    ]},
+    { id: "sc-2", name: "Movie Night", icon: "🍿", actions: [
+      { id: "hd-1", on: false },
+      { id: "hd-2", on: false },
+      { id: "hd-4", on: true, brightness: 25 }
+    ]},
+    { id: "sc-3", name: "All Devices Off", icon: "🌙", actions: [
+      { id: "hd-1", on: false },
+      { id: "hd-2", on: false },
+      { id: "hd-3", on: false },
+      { id: "hd-4", on: false },
+      { id: "hd-6", on: false }
+    ]},
+    { id: "sc-4", name: "Good Morning", icon: "☀️", actions: [
+      { id: "hd-1", on: true, brightness: 70 },
+      { id: "hd-4", on: true, brightness: 80 },
+      { id: "hd-5", targetTemp: 22 }
+    ]}
   ],
   plugins: [
     {
@@ -763,6 +831,8 @@ function load() {
     merged.profiles = { ...structuredClone(DEFAULTS.profiles), ...(parsed.profiles || {}) };
     merged.engines = { ...structuredClone(DEFAULTS.engines), ...(parsed.engines || {}) };
     merged.bangs   = { ...structuredClone(DEFAULTS.bangs),   ...(parsed.bangs   || {}) };
+    merged.homeDevices = Array.isArray(parsed.homeDevices) ? parsed.homeDevices : structuredClone(DEFAULTS.homeDevices);
+    merged.homeScenes  = Array.isArray(parsed.homeScenes)  ? parsed.homeScenes  : structuredClone(DEFAULTS.homeScenes);
 
     // Migrate old default widgets (e.g. 3-item setup with octocat / old SF weather) to new standard defaults
     const isOldDefaultWidgets = Array.isArray(parsed.widgets) && (
@@ -2637,6 +2707,7 @@ function buildOmniSuggestions(raw) {
     { key: "dns", name: "DNS DoH Lookup", action: () => openTool("dns") },
     { key: "keygen", name: "Key & Token Generator", action: () => openTool("keygen") },
     { key: "api", name: "API Tester", action: () => openTool("api") },
+    { key: "ghome", name: "Google Home & Smart Devices", action: () => openTool("ghome") },
     { key: "vault", name: "Secrets Vault", action: () => openVault() },
     { key: "diff", name: "Scratchpad Diff", action: () => document.getElementById("padDiff").click() }
   ];
@@ -2929,7 +3000,7 @@ function openTool(name) {
   ({ json: toolJson, b64: toolB64, jwt: toolJwt, ts: toolTs, regex: toolRegex,
      uuid: toolUuid, hash: toolHash, url: toolUrl, color: toolColor,
      curl: toolCurl, cron: toolCron, dns: toolDns, keygen: toolKeygen,
-     api: toolApi, more: toolMore })[name]?.();
+     api: toolApi, ghome: toolGoogleHome, more: toolMore })[name]?.();
 }
 function toolJson() {
   openModal("JSON Format / Validate", `
@@ -3858,6 +3929,547 @@ function parseScalar(v) {
 }
 
 /* ============================================================
+   GOOGLE HOME & SMART DEVICES
+   ============================================================ */
+function getHomeDevices() {
+  if (!Array.isArray(cfg.homeDevices)) cfg.homeDevices = structuredClone(DEFAULTS.homeDevices);
+  return cfg.homeDevices;
+}
+
+function getHomeScenes() {
+  if (!Array.isArray(cfg.homeScenes)) cfg.homeScenes = structuredClone(DEFAULTS.homeScenes);
+  return cfg.homeScenes;
+}
+
+async function dispatchDeviceAction(device) {
+  save();
+  if (device.webhookUrl && typeof device.webhookUrl === "string" && device.webhookUrl.trim().startsWith("http")) {
+    try {
+      await fetch(device.webhookUrl.trim(), {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: device.id,
+          name: device.name,
+          type: device.type,
+          room: device.room,
+          on: device.on,
+          brightness: device.brightness,
+          targetTemp: device.targetTemp,
+          locked: device.locked,
+          volume: device.volume,
+          timestamp: Date.now()
+        })
+      });
+    } catch {
+      // silent catch for no-cors/offline
+    }
+  }
+}
+
+function triggerHomeScene(sceneId) {
+  const scenes = getHomeScenes();
+  const scene = scenes.find(s => s.id === sceneId);
+  if (!scene) return;
+  const devices = getHomeDevices();
+
+  (scene.actions || []).forEach(act => {
+    const dev = devices.find(d => d.id === act.id);
+    if (dev) {
+      if (act.on !== undefined) dev.on = act.on;
+      if (act.brightness !== undefined) dev.brightness = act.brightness;
+      if (act.targetTemp !== undefined) dev.targetTemp = act.targetTemp;
+      if (act.locked !== undefined) dev.locked = act.locked;
+      if (act.volume !== undefined) dev.volume = act.volume;
+      dispatchDeviceAction(dev);
+    }
+  });
+
+  save();
+  renderActiveGoogleHomeWidgets();
+  toast(`Routine: ${scene.name}`);
+}
+
+function renderActiveGoogleHomeWidgets() {
+  const cards = document.querySelectorAll(".widget");
+  cards.forEach(card => {
+    const menuBtn = card.querySelector(".widget-menu");
+    if (!menuBtn) return;
+    const wid = menuBtn.dataset.menu;
+    const w = widgetById(wid);
+    if (w && w.type === "googlehome") {
+      const body = card.querySelector(".widget-body");
+      if (body) renderGoogleHomeWidget(body, w.config || {});
+    }
+  });
+}
+
+function renderGoogleHomeWidget(el, c = {}) {
+  const allDevices = getHomeDevices();
+  const scenes = getHomeScenes();
+  const rooms = ["all", ...new Set(allDevices.map(d => d.room).filter(Boolean))];
+  let activeRoom = c.filterRoom || "all";
+  if (!rooms.includes(activeRoom)) activeRoom = "all";
+
+  function update() {
+    const filtered = activeRoom === "all" ? allDevices : allDevices.filter(d => d.room === activeRoom);
+
+    el.innerHTML = `
+      <div class="w-ghome">
+        <div class="ghome-top">
+          <div class="ghome-rooms">
+            ${rooms.map(r => `
+              <button class="ghome-room-btn ${r === activeRoom ? "active" : ""}" data-room="${escapeHtml(r)}">
+                ${r === "all" ? "All" : escapeHtml(r)}
+              </button>
+            `).join("")}
+          </div>
+          <a href="https://home.google.com/" target="_blank" rel="noopener" class="ghome-web-btn" title="Open Google Home Web">
+            <span>🏠</span> Web ↗
+          </a>
+        </div>
+
+        <div class="ghome-devices">
+          ${!filtered.length ? `<div style="grid-column:1/-1;font-size:11px;color:var(--dim);text-align:center;padding:12px">No devices in ${escapeHtml(activeRoom)}</div>` : ""}
+          ${filtered.map(d => {
+            const isLight = d.type === "light";
+            const isPlug = d.type === "plug";
+            const isThermostat = d.type === "thermostat";
+            const isSpeaker = d.type === "speaker";
+            const isLock = d.type === "lock";
+
+            let icon = "💡";
+            if (isPlug) icon = "🔌";
+            else if (isThermostat) icon = "🌡️";
+            else if (isSpeaker) icon = "🔊";
+            else if (isLock) icon = d.locked ? "🔒" : "🔓";
+
+            let pill = "OFF";
+            if (isThermostat) {
+              pill = `${d.targetTemp || 22}${d.unit || "°C"}`;
+            } else if (isLock) {
+              pill = d.locked ? "LOCKED" : "UNLOCKED";
+            } else if (d.on) {
+              if (isLight && d.brightness) pill = `${d.brightness}%`;
+              else if (isPlug && d.power) pill = d.power;
+              else if (isSpeaker) pill = d.volume ? `${d.volume}%` : "ON";
+              else pill = "ON";
+            }
+
+            const isOn = isLock ? !d.locked : (isThermostat ? true : !!d.on);
+
+            return `
+              <div class="ghome-card ${isOn ? "on" : ""}" data-dev="${escapeHtml(d.id)}">
+                <div class="ghome-head">
+                  <span class="ghome-ico">${icon}</span>
+                  <span class="ghome-pill">${pill}</span>
+                </div>
+                <div class="ghome-info">
+                  <span class="ghome-name" title="${escapeHtml(d.name)}">${escapeHtml(d.name)}</span>
+                  <span class="ghome-room">${escapeHtml(d.room || "Home")}</span>
+                </div>
+                <div class="ghome-action">
+                  ${isThermostat ? `
+                    <div class="ghome-stepper">
+                      <button class="ghome-stepper-btn" data-step="down" title="Lower temp">-</button>
+                      <span class="ghome-temp-val">${d.targetTemp || 22}${d.unit || "°C"}</span>
+                      <button class="ghome-stepper-btn" data-step="up" title="Raise temp">+</button>
+                    </div>
+                  ` : `
+                    <button class="ghome-btn" data-toggle="${escapeHtml(d.id)}">
+                      ${isLock ? (d.locked ? "Unlock" : "Lock") : (d.on ? "Turn Off" : "Turn On")}
+                    </button>
+                  `}
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+
+        ${c.showScenes !== false && scenes.length ? `
+          <div class="ghome-scenes">
+            ${scenes.map(s => `
+              <button class="ghome-scene-chip" data-scene="${escapeHtml(s.id)}" title="Run ${escapeHtml(s.name)}">
+                <span>${s.icon || "⚡"}</span>
+                <span>${escapeHtml(s.name)}</span>
+              </button>
+            `).join("")}
+          </div>
+        ` : ""}
+      </div>
+    `;
+
+    el.querySelectorAll(".ghome-room-btn").forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        activeRoom = btn.dataset.room;
+        update();
+      };
+    });
+
+    el.querySelectorAll(".ghome-scene-chip").forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        triggerHomeScene(btn.dataset.scene);
+      };
+    });
+
+    el.querySelectorAll(".ghome-btn").forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.toggle;
+        const dev = allDevices.find(x => x.id === id);
+        if (!dev) return;
+        if (dev.type === "lock") dev.locked = !dev.locked;
+        else dev.on = !dev.on;
+        dispatchDeviceAction(dev);
+        update();
+        renderActiveGoogleHomeWidgets();
+      };
+    });
+
+    el.querySelectorAll(".ghome-stepper-btn").forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const card = btn.closest("[data-dev]");
+        if (!card) return;
+        const dev = allDevices.find(x => x.id === card.dataset.dev);
+        if (!dev) return;
+        const delta = btn.dataset.step === "up" ? 1 : -1;
+        dev.targetTemp = Math.max(15, Math.min(32, (dev.targetTemp || 22) + delta));
+        dispatchDeviceAction(dev);
+        update();
+        renderActiveGoogleHomeWidgets();
+      };
+    });
+  }
+
+  update();
+}
+
+function toolGoogleHome() {
+  const allDevices = getHomeDevices();
+  const scenes = getHomeScenes();
+  let filterRoom = "all";
+
+  openModal("Google Home & Smart Devices", `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <a href="https://home.google.com/" target="_blank" rel="noopener" class="ghome-web-btn" style="margin-left:0">
+          <span>🏠</span> Google Home Web ↗
+        </a>
+        <a href="https://console.nest.google.com/device-access" target="_blank" rel="noopener" class="ghome-web-btn" style="margin-left:0;color:var(--fg-2);border-color:var(--border)">
+          <span>🔑</span> Nest Access Console ↗
+        </a>
+      </div>
+      <button id="ghomeAddToggle" style="font-size:12px;padding:5px 12px">+ Add Device</button>
+    </div>
+
+    <!-- Add/Edit Device Form -->
+    <div id="ghomeDevForm" style="display:none;background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px" id="ghomeFormHeading">Add Smart Device</div>
+      <input type="hidden" id="ghomeFormId">
+      <div class="field" style="margin-bottom:8px">
+        <label>Device Name</label>
+        <input type="text" id="ghomeFormName" placeholder="e.g. Studio Light, AC, Coffee Maker">
+      </div>
+      <div class="row" style="margin-bottom:8px;gap:8px">
+        <div style="flex:1">
+          <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:4px">Device Type</label>
+          <select id="ghomeFormType" style="width:100%;padding:6px;background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--fg)">
+            <option value="light">Light (💡)</option>
+            <option value="plug">Smart Plug / Outlet (🔌)</option>
+            <option value="thermostat">Thermostat (🌡️)</option>
+            <option value="speaker">Speaker / Audio (🔊)</option>
+            <option value="lock">Smart Lock (🔒)</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:4px">Room</label>
+          <input type="text" id="ghomeFormRoom" placeholder="e.g. Office, Living Room" style="width:100%;padding:6px;background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--fg)">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <label>Webhook URL (Optional - Home Assistant / IoT endpoint)</label>
+        <input type="url" id="ghomeFormWebhook" placeholder="https://homeassistant.local/api/webhook/...">
+      </div>
+      <div class="row" style="gap:8px">
+        <button id="ghomeFormSave">Save Device</button>
+        <button id="ghomeFormCancel" class="ghost">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Quick Routines -->
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Quick Routines</div>
+      <div class="ghome-scenes" id="ghomeModalScenes"></div>
+    </div>
+
+    <!-- Room Filter & Device Count -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+      <div class="ghome-rooms" id="ghomeModalRooms"></div>
+      <span id="ghomeDevCount" style="font-size:11px;color:var(--muted);font-family:var(--mono)"></span>
+    </div>
+
+    <!-- Devices Grid -->
+    <div class="ghome-devices" id="ghomeModalDevGrid" style="grid-template-columns:repeat(auto-fill, minmax(145px, 1fr));margin-bottom:12px"></div>
+  `);
+
+  document.getElementById("modalBox").classList.add("wide");
+
+  const formEl = document.getElementById("ghomeDevForm");
+  const formHeading = document.getElementById("ghomeFormHeading");
+  const formId = document.getElementById("ghomeFormId");
+  const formName = document.getElementById("ghomeFormName");
+  const formType = document.getElementById("ghomeFormType");
+  const formRoom = document.getElementById("ghomeFormRoom");
+  const formWebhook = document.getElementById("ghomeFormWebhook");
+
+  document.getElementById("ghomeAddToggle").onclick = () => {
+    formId.value = "";
+    formName.value = "";
+    formType.value = "light";
+    formRoom.value = filterRoom !== "all" ? filterRoom : "Office";
+    formWebhook.value = "";
+    formHeading.textContent = "Add Smart Device";
+    formEl.style.display = formEl.style.display === "none" ? "block" : "none";
+    if (formEl.style.display === "block") formName.focus();
+  };
+
+  document.getElementById("ghomeFormCancel").onclick = () => {
+    formEl.style.display = "none";
+  };
+
+  document.getElementById("ghomeFormSave").onclick = () => {
+    const name = formName.value.trim();
+    if (!name) { toast("Device name is required"); return; }
+    const type = formType.value;
+    const room = formRoom.value.trim() || "General";
+    const webhookUrl = formWebhook.value.trim();
+
+    if (formId.value) {
+      const dev = allDevices.find(d => d.id === formId.value);
+      if (dev) {
+        dev.name = name;
+        dev.type = type;
+        dev.room = room;
+        dev.webhookUrl = webhookUrl;
+      }
+    } else {
+      const id = "hd-" + Math.random().toString(36).slice(2, 7);
+      allDevices.push({
+        id,
+        name,
+        type,
+        room,
+        on: false,
+        brightness: type === "light" ? 100 : undefined,
+        targetTemp: type === "thermostat" ? 22 : undefined,
+        currentTemp: type === "thermostat" ? 21 : undefined,
+        unit: type === "thermostat" ? "°C" : undefined,
+        volume: type === "speaker" ? 50 : undefined,
+        locked: type === "lock" ? true : undefined,
+        webhookUrl
+      });
+    }
+    save();
+    formEl.style.display = "none";
+    renderActiveGoogleHomeWidgets();
+    renderModalView();
+    toast(formId.value ? "Device updated" : "Device added");
+  };
+
+  function renderModalView() {
+    const scenesEl = document.getElementById("ghomeModalScenes");
+    scenesEl.innerHTML = scenes.map(s => `
+      <button class="ghome-scene-chip" data-modal-scene="${escapeHtml(s.id)}">
+        <span>${s.icon || "⚡"}</span>
+        <span>${escapeHtml(s.name)}</span>
+      </button>
+    `).join("");
+    scenesEl.querySelectorAll("[data-modal-scene]").forEach(btn => {
+      btn.onclick = () => {
+        triggerHomeScene(btn.dataset.modalScene);
+        renderModalView();
+      };
+    });
+
+    const rooms = ["all", ...new Set(allDevices.map(d => d.room).filter(Boolean))];
+    if (!rooms.includes(filterRoom)) filterRoom = "all";
+    const roomsEl = document.getElementById("ghomeModalRooms");
+    roomsEl.innerHTML = rooms.map(r => `
+      <button class="ghome-room-btn ${r === filterRoom ? "active" : ""}" data-modal-room="${escapeHtml(r)}">
+        ${r === "all" ? "All Rooms" : escapeHtml(r)}
+      </button>
+    `).join("");
+    roomsEl.querySelectorAll("[data-modal-room]").forEach(btn => {
+      btn.onclick = () => {
+        filterRoom = btn.dataset.modalRoom;
+        renderModalView();
+      };
+    });
+
+    const filtered = filterRoom === "all" ? allDevices : allDevices.filter(d => d.room === filterRoom);
+    document.getElementById("ghomeDevCount").textContent = `${filtered.length} device${filtered.length === 1 ? "" : "s"}`;
+    const gridEl = document.getElementById("ghomeModalDevGrid");
+
+    if (!filtered.length) {
+      gridEl.innerHTML = `<div style="grid-column:1/-1;font-size:12px;color:var(--dim);text-align:center;padding:24px">No devices found in ${escapeHtml(filterRoom)}. Click "+ Add Device" above to add one.</div>`;
+      return;
+    }
+
+    gridEl.innerHTML = filtered.map(d => {
+      const isLight = d.type === "light";
+      const isPlug = d.type === "plug";
+      const isThermostat = d.type === "thermostat";
+      const isSpeaker = d.type === "speaker";
+      const isLock = d.type === "lock";
+
+      let icon = "💡";
+      if (isPlug) icon = "🔌";
+      else if (isThermostat) icon = "🌡️";
+      else if (isSpeaker) icon = "🔊";
+      else if (isLock) icon = d.locked ? "🔒" : "🔓";
+
+      let pill = "OFF";
+      if (isThermostat) {
+        pill = `${d.targetTemp || 22}${d.unit || "°C"}`;
+      } else if (isLock) {
+        pill = d.locked ? "LOCKED" : "UNLOCKED";
+      } else if (d.on) {
+        if (isLight && d.brightness) pill = `${d.brightness}%`;
+        else if (isPlug && d.power) pill = d.power;
+        else if (isSpeaker) pill = d.volume ? `${d.volume}%` : "ON";
+        else pill = "ON";
+      }
+
+      const isOn = isLock ? !d.locked : (isThermostat ? true : !!d.on);
+
+      return `
+        <div class="ghome-card ${isOn ? "on" : ""}" data-dev="${escapeHtml(d.id)}">
+          <div class="ghome-head">
+            <span class="ghome-ico">${icon}</span>
+            <div style="display:flex;gap:4px;align-items:center">
+              <span class="ghome-pill">${pill}</span>
+              <button class="dev-tool-btn" data-edit="${escapeHtml(d.id)}" title="Edit device" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:11px;padding:2px">✏️</button>
+              <button class="dev-tool-btn" data-del="${escapeHtml(d.id)}" title="Delete device" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:11px;padding:2px">🗑️</button>
+            </div>
+          </div>
+          <div class="ghome-info">
+            <span class="ghome-name" title="${escapeHtml(d.name)}">${escapeHtml(d.name)}</span>
+            <span class="ghome-room">${escapeHtml(d.room || "Home")}${d.webhookUrl ? " · ⚡" : ""}</span>
+          </div>
+          ${isLight && d.on ? `
+            <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted)">
+              <span>🔅</span>
+              <input type="range" class="ghome-bright" data-bright="${escapeHtml(d.id)}" min="10" max="100" value="${d.brightness || 100}" style="flex:1;accent-color:var(--accent);height:4px">
+              <span>${d.brightness || 100}%</span>
+            </div>
+          ` : ""}
+          <div class="ghome-action">
+            ${isThermostat ? `
+              <div class="ghome-stepper">
+                <button class="ghome-stepper-btn" data-step="down" title="Lower temp">-</button>
+                <span class="ghome-temp-val">${d.targetTemp || 22}${d.unit || "°C"}</span>
+                <button class="ghome-stepper-btn" data-step="up" title="Raise temp">+</button>
+              </div>
+            ` : `
+              <button class="ghome-btn" data-toggle="${escapeHtml(d.id)}">
+                ${isLock ? (d.locked ? "Unlock" : "Lock") : (d.on ? "Turn Off" : "Turn On")}
+              </button>
+            `}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    gridEl.querySelectorAll("[data-edit]").forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const dev = allDevices.find(d => d.id === btn.dataset.edit);
+        if (!dev) return;
+        formId.value = dev.id;
+        formName.value = dev.name;
+        formType.value = dev.type;
+        formRoom.value = dev.room || "";
+        formWebhook.value = dev.webhookUrl || "";
+        formHeading.textContent = "Edit Smart Device";
+        formEl.style.display = "block";
+        formName.focus();
+      };
+    });
+
+    gridEl.querySelectorAll("[data-del]").forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const idx = allDevices.findIndex(d => d.id === btn.dataset.del);
+        if (idx === -1) return;
+        if (confirm(`Remove "${allDevices[idx].name}"?`)) {
+          allDevices.splice(idx, 1);
+          save();
+          renderActiveGoogleHomeWidgets();
+          renderModalView();
+          toast("Device removed");
+        }
+      };
+    });
+
+    gridEl.querySelectorAll(".ghome-btn").forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const dev = allDevices.find(d => d.id === btn.dataset.toggle);
+        if (!dev) return;
+        if (dev.type === "lock") dev.locked = !dev.locked;
+        else dev.on = !dev.on;
+        dispatchDeviceAction(dev);
+        renderActiveGoogleHomeWidgets();
+        renderModalView();
+      };
+    });
+
+    gridEl.querySelectorAll(".ghome-bright").forEach(input => {
+      input.oninput = (e) => {
+        e.stopPropagation();
+        const dev = allDevices.find(d => d.id === input.dataset.bright);
+        if (!dev) return;
+        dev.brightness = parseInt(input.value);
+        const card = input.closest(".ghome-card");
+        if (card) {
+          const pill = card.querySelector(".ghome-pill");
+          if (pill) pill.textContent = `${dev.brightness}%`;
+        }
+      };
+      input.onchange = (e) => {
+        e.stopPropagation();
+        const dev = allDevices.find(d => d.id === input.dataset.bright);
+        if (!dev) return;
+        dev.brightness = parseInt(input.value);
+        dispatchDeviceAction(dev);
+        renderActiveGoogleHomeWidgets();
+      };
+    });
+
+    gridEl.querySelectorAll(".ghome-stepper-btn").forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const card = btn.closest("[data-dev]");
+        if (!card) return;
+        const dev = allDevices.find(x => x.id === card.dataset.dev);
+        if (!dev) return;
+        const delta = btn.dataset.step === "up" ? 1 : -1;
+        dev.targetTemp = Math.max(15, Math.min(32, (dev.targetTemp || 22) + delta));
+        dispatchDeviceAction(dev);
+        renderActiveGoogleHomeWidgets();
+        renderModalView();
+      };
+    });
+  }
+
+  renderModalView();
+}
+
+/* ============================================================
    PLUGINS
    ============================================================ */
 async function renderPlugins() {
@@ -3991,7 +4603,13 @@ function buildCommands() {
   t("DNS: DoH query lookup", "", () => openTool("dns"));
   t("Keygen: token & password generator", "", () => openTool("keygen"));
   t("API tester", "", () => openTool("api"));
+  t("Google Home: smart devices & routines", "", () => openTool("ghome"));
   t("More tools (JSON↔YAML)", "", () => openTool("more"));
+
+  cmds.push({ cat:"home", label:"Google Home: manage devices & routines", run:()=>{ closePalette(); toolGoogleHome(); } });
+  cmds.push({ cat:"home", label:"Google Home: open web dashboard (home.google.com)", run:()=>{ window.open("https://home.google.com/","_blank"); closePalette(); } });
+  cmds.push({ cat:"home", label:"Google Home: run routine 'Focus Work'", run:()=>{ closePalette(); triggerHomeScene("sc-1"); } });
+  cmds.push({ cat:"home", label:"Google Home: run routine 'All Devices Off'", run:()=>{ closePalette(); triggerHomeScene("sc-3"); } });
 
   Object.entries(cfg.pads.buffers).forEach(([id, buf]) => cmds.push({
     cat:"scratchpad", label:`Scratchpad: ${buf.name}`,
