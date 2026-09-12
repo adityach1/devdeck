@@ -4032,7 +4032,7 @@ async function checkGoogleAuthRedirect() {
 async function syncGoogleDevices(onDone) {
   const rawPid = (cfg.googleAuth?.projectId || "").trim();
   if (!rawPid || !cfg.googleAuth?.accessToken) {
-    toast("Google Home devices refreshed");
+    toast("Google Account connected. (Note: Google Cloud API only syncs Nest hardware; use Bulk Add or Google Home Web for other devices)", 5000);
     if (onDone) onDone();
     return;
   }
@@ -4107,9 +4107,66 @@ async function syncGoogleDevices(onDone) {
   }
 }
 
+function parseBulkDeviceLine(line) {
+  line = line.trim();
+  if (!line || line.startsWith("#") || line.startsWith("//")) return null;
+  const delimiter = line.includes(",") ? "," : (line.includes("|") ? "|" : "\t");
+  const parts = line.split(delimiter).map(p => p.trim());
+  let name = parts[0];
+  if (!name) return null;
+  let type = "light";
+  let room = "General";
+
+  if (parts.length >= 3) {
+    type = parts[1].toLowerCase();
+    room = parts[2] || "General";
+  } else if (parts.length === 2) {
+    const p2 = parts[1].toLowerCase();
+    if (["light", "plug", "thermostat", "speaker", "lock", "camera"].includes(p2)) {
+      type = p2;
+    } else {
+      room = parts[1];
+    }
+  }
+
+  const validTypes = ["light", "plug", "thermostat", "speaker", "lock", "camera"];
+  if (!validTypes.includes(type)) {
+    const lower = name.toLowerCase();
+    if (lower.includes("plug") || lower.includes("socket") || lower.includes("switch") || lower.includes("pc") || lower.includes("fan") || lower.includes("tv") || lower.includes("ac") || lower.includes("geyser") || lower.includes("heater")) {
+      type = "plug";
+    } else if (lower.includes("temp") || lower.includes("thermostat") || lower.includes("climate")) {
+      type = "thermostat";
+    } else if (lower.includes("speaker") || lower.includes("audio") || lower.includes("soundbar") || lower.includes("alexa") || lower.includes("nest mini") || lower.includes("nest audio")) {
+      type = "speaker";
+    } else if (lower.includes("lock") || lower.includes("door")) {
+      type = "lock";
+    } else if (lower.includes("cam") || lower.includes("camera") || lower.includes("doorbell")) {
+      type = "camera";
+    } else {
+      type = "light";
+    }
+  }
+
+  return {
+    id: "hd-" + Math.random().toString(36).slice(2, 7),
+    name,
+    type,
+    room: room || "General",
+    on: false,
+    brightness: type === "light" ? 100 : undefined,
+    targetTemp: type === "thermostat" ? 22 : undefined,
+    currentTemp: type === "thermostat" ? 21 : undefined,
+    unit: type === "thermostat" ? "°C" : undefined,
+    volume: type === "speaker" ? 50 : undefined,
+    locked: type === "lock" ? true : undefined,
+    webhookUrl: ""
+  };
+}
+
 function toolGoogleHome() {
   const allDevices = getHomeDevices();
   const scenes = getHomeScenes();
+  const SAMPLE_IDS = new Set(["hd-1", "hd-2", "hd-3", "hd-4", "hd-5", "hd-6", "hd-7"]);
   let filterRoom = "all";
   let showAuthForm = false;
   let showGuide = false;
@@ -4130,7 +4187,7 @@ function toolGoogleHome() {
           <span>👤</span> Account Devices ↗
         </a>
       </div>
-      <button id="ghomeAddToggle" style="font-size:12px;padding:5px 12px">+ Add Device</button>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap" id="ghomeBarActions"></div>
     </div>
 
     <!-- Add/Edit Device Form -->
@@ -4167,6 +4224,20 @@ function toolGoogleHome() {
       </div>
     </div>
 
+    <!-- Bulk Add Form -->
+    <div id="ghomeBulkForm" style="display:none;background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">📋 Quick Bulk Add Devices</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.4">
+        Paste your Google Home device names (one per line). Format: <code>Name, Type (light|plug|thermostat|speaker|lock), Room</code><br>
+        <em>Examples:</em> <code>Living Room Light, light, Living Room</code> or <code>Bedroom AC, plug, Bedroom</code> or just <code>Desk Fan</code>
+      </div>
+      <textarea id="ghomeBulkText" rows="5" placeholder="Living Room Light, light, Living Room&#10;Bedroom AC, plug, Bedroom&#10;Study Lamp, light, Office&#10;Desk Fan, plug, Office" style="width:100%;padding:8px;font-size:11px;font-family:var(--mono);background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--fg);resize:vertical;margin-bottom:10px"></textarea>
+      <div class="row" style="gap:8px">
+        <button id="ghomeBulkSubmit" style="font-size:12px;padding:5px 12px">Add Devices</button>
+        <button id="ghomeBulkClose" class="ghost" style="font-size:12px;padding:5px 12px">Cancel</button>
+      </div>
+    </div>
+
     <!-- Quick Routines -->
     <div style="margin-bottom:12px">
       <div style="font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Quick Routines</div>
@@ -4193,20 +4264,59 @@ function toolGoogleHome() {
   const formType = document.getElementById("ghomeFormType");
   const formRoom = document.getElementById("ghomeFormRoom");
   const formWebhook = document.getElementById("ghomeFormWebhook");
+  const bulkForm = document.getElementById("ghomeBulkForm");
+  const bulkText = document.getElementById("ghomeBulkText");
 
-  document.getElementById("ghomeAddToggle").onclick = () => {
+  function openAddForm() {
     formId.value = "";
     formName.value = "";
     formType.value = "light";
     formRoom.value = filterRoom !== "all" ? filterRoom : "Office";
     formWebhook.value = "";
     formHeading.textContent = "Add Smart Device";
+    bulkForm.style.display = "none";
     formEl.style.display = formEl.style.display === "none" ? "block" : "none";
     if (formEl.style.display === "block") formName.focus();
-  };
+  }
+
+  function openBulkForm() {
+    formEl.style.display = "none";
+    bulkForm.style.display = bulkForm.style.display === "none" ? "block" : "none";
+    if (bulkForm.style.display === "block") bulkText.focus();
+  }
 
   document.getElementById("ghomeFormCancel").onclick = () => {
     formEl.style.display = "none";
+  };
+
+  document.getElementById("ghomeBulkClose").onclick = () => {
+    bulkForm.style.display = "none";
+  };
+
+  document.getElementById("ghomeBulkSubmit").onclick = () => {
+    const raw = bulkText.value;
+    const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (!lines.length) {
+      toast("Please enter at least one device line");
+      return;
+    }
+
+    let addedCount = 0;
+    for (const line of lines) {
+      const dev = parseBulkDeviceLine(line);
+      if (dev) {
+        allDevices.push(dev);
+        addedCount++;
+      }
+    }
+
+    if (addedCount > 0) {
+      save();
+      bulkText.value = "";
+      bulkForm.style.display = "none";
+      renderModalView();
+      toast(`Added ${addedCount} device${addedCount === 1 ? "" : "s"}`);
+    }
   };
 
   document.getElementById("ghomeFormSave").onclick = () => {
@@ -4277,6 +4387,10 @@ function toolGoogleHome() {
           </div>
         </div>
 
+        <div style="margin-top:8px;padding:6px 10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:4px;font-size:10.5px;color:var(--dim);line-height:1.4">
+          💡 <strong>Google API Limitation:</strong> Google only allows Nest hardware via API sync. To control all your third-party bulbs and plugs live, use <a href="https://home.google.com/" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline">Google Home Web ↗</a> or use <strong>Bulk Add</strong> below.
+        </div>
+
         <div id="ghomeSettingsBox" style="display:${showAuthForm ? "block" : "none"};margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
           <div class="field" style="margin-bottom:6px">
             <label style="font-size:11px;color:var(--muted)">Google Cloud Client ID</label>
@@ -4335,7 +4449,7 @@ function toolGoogleHome() {
               <span>Google Account Integration</span>
               <span style="font-size:10px;color:var(--dim);border:1px solid var(--border);padding:1px 6px;border-radius:999px">Optional</span>
             </div>
-            <div style="font-size:11px;color:var(--muted)">Manage all devices connected to your Google Home account.</div>
+            <div style="font-size:11px;color:var(--muted)">Manage devices connected to your Google Home account.</div>
           </div>
           <div class="ghome-auth-actions">
             <button id="ghomeSignInBtn" class="ghome-google-btn">
@@ -4368,11 +4482,12 @@ function toolGoogleHome() {
 
         <!-- Guide Box -->
         <div id="ghomeGuideBox" class="ghome-guide-box" style="display:${showGuide ? "block" : "none"}">
-          <strong>Managing Google Home Devices in DevDeck:</strong>
+          <strong>Google Home Device Management & Cloud Sync:</strong>
           <ul style="margin:4px 0 8px 16px;padding:0">
-            <li><strong>Google Home Web</strong>: Click <a href="https://home.google.com/" target="_blank" rel="noopener" style="color:var(--accent)">Google Home Web ↗</a> above to access your live Google Home portal in your browser.</li>
-            <li><strong>Add Devices in DevDeck</strong>: Click <strong>+ Add Device</strong> to add smart lights, plugs, fans, or appliances and control them with 1-click switches, brightness sliders, and routines.</li>
-            <li><strong>No Nest ID required</strong>: Standard devices added to Google Home do not require any Nest project ID or developer registration.</li>
+            <li><strong>Why aren't third-party bulbs auto-synced?</strong> Google does not offer a public consumer API for third-party smart bulbs/plugs (Tuya, Tapo, Philips Hue, Wipro, etc.) added in Google Home. Only Google Nest hardware (Nest Thermostats, Cams) has a Cloud API (SDM).</li>
+            <li><strong>Google Home Web (Live View)</strong>: Open <a href="https://home.google.com/" target="_blank" rel="noopener" style="color:var(--accent)">Google Home Web ↗</a> anytime to view, switch, and stream all your connected Google Home devices live in your browser.</li>
+            <li><strong>Quick Setup in DevDeck</strong>: Click <strong>📋 Bulk Add</strong> to quickly paste your actual home devices (or <strong>+ Add Device</strong>) to control switches, brightness, and scenes right from DevDeck.</li>
+            <li><strong>Clear Samples</strong>: Click <strong>🧹 Clear Samples</strong> to wipe out the pre-populated demo devices with 1 click.</li>
           </ul>
         </div>
       `;
@@ -4447,6 +4562,54 @@ function toolGoogleHome() {
   function renderModalView() {
     renderAuthSection();
 
+    // Render Bar Actions
+    const barActions = document.getElementById("ghomeBarActions");
+    const hasSamples = allDevices.some(d => SAMPLE_IDS.has(d.id));
+    const hasDevices = allDevices.length > 0;
+
+    barActions.innerHTML = `
+      <button id="ghomeAddToggle" style="font-size:12px;padding:5px 11px">+ Add Device</button>
+      <button id="ghomeBulkToggle" class="ghost" style="font-size:12px;padding:5px 11px">📋 Bulk Add</button>
+      ${hasSamples ? `
+        <button id="ghomeClearSamplesBtn" class="ghost" style="font-size:12px;padding:5px 9px;color:var(--yellow);border-color:rgba(234,179,8,0.4)" title="Remove built-in sample devices">
+          🧹 Clear Samples
+        </button>
+      ` : (hasDevices ? `
+        <button id="ghomeClearAllBtn" class="ghost" style="font-size:12px;padding:5px 9px;color:var(--red);border-color:rgba(239,68,68,0.4)" title="Remove all devices">
+          🗑️ Clear All
+        </button>
+      ` : "")}
+    `;
+
+    document.getElementById("ghomeAddToggle").onclick = openAddForm;
+    document.getElementById("ghomeBulkToggle").onclick = openBulkForm;
+
+    const clearSamplesBtn = document.getElementById("ghomeClearSamplesBtn");
+    if (clearSamplesBtn) {
+      clearSamplesBtn.onclick = () => {
+        if (confirm("Remove the 7 built-in sample devices?")) {
+          const filtered = allDevices.filter(d => !SAMPLE_IDS.has(d.id));
+          allDevices.length = 0;
+          allDevices.push(...filtered);
+          save();
+          renderModalView();
+          toast("Sample devices cleared");
+        }
+      };
+    }
+
+    const clearAllBtn = document.getElementById("ghomeClearAllBtn");
+    if (clearAllBtn) {
+      clearAllBtn.onclick = () => {
+        if (confirm("Remove all smart devices from DevDeck?")) {
+          allDevices.length = 0;
+          save();
+          renderModalView();
+          toast("All devices cleared");
+        }
+      };
+    }
+
     // Render Scenes
     const scenesEl = document.getElementById("ghomeModalScenes");
     scenesEl.innerHTML = scenes.map(s => `
@@ -4484,7 +4647,28 @@ function toolGoogleHome() {
     const gridEl = document.getElementById("ghomeModalDevGrid");
 
     if (!filtered.length) {
-      gridEl.innerHTML = `<div style="grid-column:1/-1;font-size:12px;color:var(--dim);text-align:center;padding:24px">No devices found in ${escapeHtml(filterRoom)}. Click "+ Add Device" above or "Sync Google Devices".</div>`;
+      if (allDevices.length === 0) {
+        gridEl.innerHTML = `
+          <div style="grid-column:1/-1;text-align:center;padding:32px 16px;background:var(--panel-2);border-radius:var(--radius);border:1px dashed var(--border)">
+            <div style="font-size:32px;margin-bottom:8px">🏠</div>
+            <div style="font-weight:600;font-size:14px;color:var(--fg);margin-bottom:4px">No Devices Added Yet</div>
+            <div style="font-size:11.5px;max-width:440px;margin:0 auto 14px;color:var(--dim);line-height:1.5">
+              Add your Google Home devices to control switches, brightness, and scenes right from DevDeck, or view them live on Google Home Web.
+            </div>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+              <button id="ghomeEmptyAddBtn" style="font-size:12px;padding:6px 14px">+ Add Device</button>
+              <button id="ghomeEmptyBulkBtn" class="ghost" style="font-size:12px;padding:6px 14px">📋 Bulk Add Devices</button>
+              <a href="https://home.google.com/" target="_blank" rel="noopener" class="ghome-web-btn" style="margin-left:0;font-size:12px;padding:6px 14px">🏠 Open Google Home Web ↗</a>
+            </div>
+          </div>
+        `;
+        const emptyAdd = document.getElementById("ghomeEmptyAddBtn");
+        if (emptyAdd) emptyAdd.onclick = openAddForm;
+        const emptyBulk = document.getElementById("ghomeEmptyBulkBtn");
+        if (emptyBulk) emptyBulk.onclick = openBulkForm;
+      } else {
+        gridEl.innerHTML = `<div style="grid-column:1/-1;font-size:12px;color:var(--dim);text-align:center;padding:24px">No devices found in ${escapeHtml(filterRoom)}. Click "+ Add Device" above or switch to "All Rooms".</div>`;
+      }
       return;
     }
 
