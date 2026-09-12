@@ -344,17 +344,134 @@
   }
   .widget-body.error { color: var(--red); font-size: 12px; }
 
-  /* clock widget */
+  /* clock widget — modern developer UI/UX */
   .w-clock {
-    display: flex; flex-direction: column; gap: 2px;
+    display: flex; flex-direction: column; gap: 8px;
+    position: relative; user-select: none; -webkit-user-select: none;
   }
-  .w-clock .time {
-    font-family: var(--mono); font-size: 30px;
-    font-weight: 300; letter-spacing: -.02em;
-    color: var(--fg); line-height: 1.1;
+  .w-clock-top {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
   }
-  .w-clock .date { color: var(--muted); font-size: 12px; }
-  .w-clock .sub { color: var(--dim); font-size: 11px; font-family: var(--mono); margin-top: 4px; }
+  .w-clock-main {
+    display: inline-flex; align-items: baseline; gap: 5px;
+    cursor: pointer; border-radius: var(--radius-sm);
+    padding: 2px 4px; margin: -2px -4px;
+    transition: background .15s var(--ease), transform .15s var(--ease);
+  }
+  .w-clock-main:hover {
+    background: var(--panel-2); transform: translateY(-1px);
+  }
+  .w-clock-digits {
+    display: inline-flex; align-items: baseline;
+    font-family: var(--mono); font-size: 34px; font-weight: 400;
+    line-height: 1; letter-spacing: -0.03em; color: var(--fg);
+    font-variant-numeric: tabular-nums;
+  }
+  .w-clock-colon {
+    color: var(--accent); margin: 0 1px;
+    animation: clock-colon-pulse 2s ease-in-out infinite;
+  }
+  @keyframes clock-colon-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .w-clock-s {
+    font-family: var(--mono); font-size: 16px; font-weight: 500;
+    color: var(--dim); font-variant-numeric: tabular-nums;
+  }
+  .w-clock-ampm {
+    font-family: var(--mono); font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 2px 5px; border-radius: 4px;
+    background: var(--panel-2); color: var(--accent);
+    border: 1px solid var(--border); cursor: pointer;
+    transition: all .15s var(--ease); align-self: center;
+  }
+  .w-clock-ampm:hover {
+    background: var(--accent); color: var(--accent-fg);
+  }
+  .clock-mode-btn {
+    width: 24px; height: 24px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: var(--dim); border-radius: 6px;
+    background: transparent; border: 1px solid transparent;
+    cursor: pointer; transition: all .15s var(--ease);
+  }
+  .clock-mode-btn:hover {
+    color: var(--fg); background: var(--panel-2); border-color: var(--border);
+  }
+
+  /* Date & Badges */
+  .w-clock-date-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    cursor: pointer; padding: 2px 4px; margin: -2px -4px;
+    border-radius: var(--radius-sm); transition: background .15s var(--ease);
+  }
+  .w-clock-date-row:hover { background: var(--panel-2); }
+  .w-clock-date {
+    font-size: 12.5px; font-weight: 500; color: var(--fg-2);
+    letter-spacing: -0.01em;
+  }
+  .w-clock-badges {
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .w-clock-badge {
+    font-family: var(--mono); font-size: 9.5px; font-weight: 600;
+    color: var(--dim); background: var(--panel-2);
+    padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border);
+  }
+
+  /* Day Progress Bar */
+  .w-clock-progress-wrap {
+    display: flex; flex-direction: column; gap: 4px; margin-top: 2px;
+  }
+  .w-clock-progress-track {
+    width: 100%; height: 4px; background: var(--panel-2);
+    border-radius: 999px; overflow: hidden; position: relative;
+    border: 1px solid var(--border);
+  }
+  .w-clock-progress-bar {
+    height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--purple, #c084fc) 100%);
+    transition: width 1s linear;
+  }
+  .w-clock-progress-lbl {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 10px; color: var(--dim); font-family: var(--mono);
+  }
+
+  /* Meta Chips */
+  .w-clock-meta {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    margin-top: 2px; padding-top: 6px; border-top: 1px solid var(--border);
+  }
+  .w-clock-chip {
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+    background: var(--panel-hi); border: 1px solid var(--border);
+    padding: 2px 7px; border-radius: 4px; cursor: pointer;
+    transition: all .15s var(--ease); display: inline-flex; align-items: center; gap: 4px;
+  }
+  .w-clock-chip:hover {
+    color: var(--fg); border-color: var(--accent); background: var(--panel-2);
+  }
+
+  /* Analog & Hybrid Views */
+  .w-clock-analog-wrap {
+    display: flex; align-items: center; gap: 16px; justify-content: center; padding: 4px 0;
+  }
+  .w-clock-hybrid {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .w-clock-analog-face {
+    width: 76px; height: 76px; flex-shrink: 0;
+  }
+  .w-clock-dial {
+    width: 100%; height: 100%; display: block;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,.25));
+  }
+  .clock-hand-h, .clock-hand-m, .clock-hand-s {
+    transition: transform 0.2s cubic-bezier(0.4, 2.08, 0.55, 0.44);
+  }
 
   /* world clock */
   .w-world { display: flex; flex-direction: column; gap: 8px; }
@@ -2168,7 +2285,7 @@
     .wrap { width: 95%; max-width: 3200px; padding: 32px 40px max(80px, env(safe-area-inset-bottom, 32px)); }
     .widgets-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
     .card, .widget { padding: 22px 26px; }
-    .w-clock .time { font-size: 40px; }
+    .w-clock .time, .w-clock .w-clock-digits { font-size: 40px; }
     .w-weather .temp { font-size: 42px; }
   }
 
@@ -2303,7 +2420,7 @@
     .card { padding: 14px 12px; }
     
     /* Widget internals */
-    .w-clock .time { font-size: clamp(28px, 8vw, 36px); }
+    .w-clock .time, .w-clock .w-clock-digits { font-size: clamp(28px, 8vw, 36px); }
     .w-weather { gap: 12px; }
     .w-weather .temp { font-size: clamp(28px, 8vw, 36px); }
     .w-weather .ico-big { font-size: clamp(28px, 8vw, 36px); }

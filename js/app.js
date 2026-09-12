@@ -37,35 +37,333 @@ function getAudioContext() {
      refresh  — optional interval ms
      render(el, cfg) — async, fills el with widget body HTML
    ============================================================ */
+/* ---------- Clock Helpers ---------- */
+function getClockData(tz, hour12) {
+  const d = new Date();
+  const dateOpts = { weekday: "short", month: "short", day: "numeric", timeZone: tz || undefined };
+  let fullDate = "";
+  try {
+    fullDate = d.toLocaleDateString(undefined, dateOpts);
+  } catch {
+    fullDate = d.toLocaleDateString();
+  }
+
+  const timeOpts = {
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    hour12: Boolean(hour12),
+    timeZone: tz || undefined
+  };
+  let hh = "00", mm = "00", ss = "00", dayPeriod = "";
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", timeOpts).formatToParts(d);
+    hh = parts.find(p => p.type === "hour")?.value || "00";
+    mm = parts.find(p => p.type === "minute")?.value || "00";
+    ss = parts.find(p => p.type === "second")?.value || "00";
+    dayPeriod = parts.find(p => p.type === "dayPeriod")?.value || "";
+  } catch {
+    hh = String(d.getHours()).padStart(2, "0");
+    mm = String(d.getMinutes()).padStart(2, "0");
+    ss = String(d.getSeconds()).padStart(2, "0");
+  }
+
+  // Day of year
+  const start = new Date(d.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((d - start) / 86400000);
+
+  // Week number (ISO 8601)
+  const dateUTC = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = dateUTC.getUTCDay() || 7;
+  dateUTC.setUTCDate(dateUTC.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(dateUTC.getUTCFullYear(), 0, 1));
+  const weekNum = Math.ceil((((dateUTC - yearStart) / 86400000) + 1) / 7);
+
+  // Day progress
+  const startOfDay = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const elapsed = d.getTime() - startOfDay;
+  const progressPct = Math.min(100, Math.max(0, ((elapsed / 86400000) * 100))).toFixed(1);
+  const msLeft = Math.max(0, 86400000 - elapsed);
+  const hrsLeft = Math.floor(msLeft / 3600000);
+  const minsLeft = Math.floor((msLeft % 3600000) / 60000);
+
+  // TZ offset
+  let offset = "UTC";
+  try {
+    const tzParts = new Intl.DateTimeFormat("en-US", { timeZone: tz || undefined, timeZoneName: "shortOffset" }).formatToParts(d);
+    offset = tzParts.find(p => p.type === "timeZoneName")?.value.replace("GMT", "UTC") || "UTC";
+  } catch {}
+
+  let tzAbbr = "";
+  try {
+    tzAbbr = tz ? d.toLocaleTimeString("en-US", { timeZone: tz, timeZoneName: "short" }).split(" ").pop() : Intl.DateTimeFormat().resolvedOptions().timeZone.split("/").pop().replace(/_/g, " ");
+  } catch {
+    tzAbbr = "LOC";
+  }
+
+  // Analog angles
+  const hNum = parseInt(hh, 10) % 12;
+  const mNum = parseInt(mm, 10);
+  const sNum = parseInt(ss, 10);
+  const secDeg = sNum * 6;
+  const minDeg = mNum * 6 + sNum * 0.1;
+  const hourDeg = hNum * 30 + mNum * 0.5;
+
+  return {
+    hh, mm, ss, dayPeriod, fullDate, dayOfYear, weekNum,
+    progressPct, hrsLeft, minsLeft, offset, tzAbbr,
+    secDeg, minDeg, hourDeg,
+    epoch: Math.floor(d.getTime() / 1000),
+    iso: d.toISOString()
+  };
+}
+
+function getAnalogClockSvg(hourDeg, minDeg, secDeg) {
+  let ticks = "";
+  for (let i = 0; i < 12; i++) {
+    const deg = i * 30;
+    const isMajor = i % 3 === 0;
+    const y2 = isMajor ? 14 : 11;
+    const width = isMajor ? 2.4 : 1.2;
+    const color = isMajor ? "var(--fg-2)" : "var(--border-hi)";
+    ticks += `<line x1="50" y1="7" x2="50" y2="${y2}" stroke="${color}" stroke-width="${width}" stroke-linecap="round" transform="rotate(${deg} 50 50)"/>`;
+  }
+  return `<svg viewBox="0 0 100 100" class="w-clock-dial">
+    <circle cx="50" cy="50" r="45" fill="var(--panel-hi)" stroke="var(--border)" stroke-width="2"/>
+    ${ticks}
+    <line class="clock-hand-h" x1="50" y1="50" x2="50" y2="28" stroke="var(--fg)" stroke-width="3.2" stroke-linecap="round" transform="rotate(${hourDeg} 50 50)"/>
+    <line class="clock-hand-m" x1="50" y1="50" x2="50" y2="18" stroke="var(--fg-2)" stroke-width="2" stroke-linecap="round" transform="rotate(${minDeg} 50 50)"/>
+    <line class="clock-hand-s" x1="50" y1="58" x2="50" y2="13" stroke="var(--accent)" stroke-width="1.2" stroke-linecap="round" transform="rotate(${secDeg} 50 50)"/>
+    <circle cx="50" cy="50" r="3" fill="var(--accent)"/>
+    <circle cx="50" cy="50" r="1.2" fill="var(--panel)"/>
+  </svg>`;
+}
+
 const WIDGETS = {
 
   /* ---------- Clock ---------- */
   clock: {
     name: "Clock",
     icon: "🕐",
-    desc: "Current time and date. Zero config.",
-    defaults: { tz: "", showSeconds: false },
+    desc: "Precision digital, hybrid, or analog clock with day progress and developer timestamps.",
+    defaults: {
+      tz: "",
+      showSeconds: true,
+      hour12: false,
+      clockStyle: "digital",
+      showProgress: true,
+      showDevInfo: true
+    },
     refresh: 1000,
     config: (c) => `
       <div class="wrow"><label style="flex:1">Time zone (IANA, blank = local)</label>
-        <input type="text" data-k="tz" value="${escapeHtml(c.tz||"")}" placeholder="America/New_York"/></div>
+        <input type="text" data-k="tz" value="${escapeHtml(c.tz||"")}" placeholder="e.g. UTC, America/New_York, Asia/Kolkata"/></div>
+      <div class="wrow"><label style="flex:1">Clock style</label>
+        <select data-k="clockStyle">
+          <option value="digital" ${c.clockStyle !== "hybrid" && c.clockStyle !== "analog" ? "selected" : ""}>Digital (Modern)</option>
+          <option value="hybrid" ${c.clockStyle === "hybrid" ? "selected" : ""}>Hybrid (Analog dial + Digital)</option>
+          <option value="analog" ${c.clockStyle === "analog" ? "selected" : ""}>Analog Watch Face</option>
+        </select></div>
+      <div class="wrow"><label style="flex:1">12-hour format (AM/PM)</label>
+        <input type="checkbox" data-k="hour12" ${c.hour12?"checked":""}/></div>
       <div class="wrow"><label style="flex:1">Show seconds</label>
-        <input type="checkbox" data-k="showSeconds" ${c.showSeconds?"checked":""}/></div>`,
+        <input type="checkbox" data-k="showSeconds" ${c.showSeconds !== false?"checked":""}/></div>
+      <div class="wrow"><label style="flex:1">Show day progress bar</label>
+        <input type="checkbox" data-k="showProgress" ${c.showProgress !== false?"checked":""}/></div>
+      <div class="wrow"><label style="flex:1">Show developer metadata (Week, Epoch, UTC)</label>
+        <input type="checkbox" data-k="showDevInfo" ${c.showDevInfo !== false?"checked":""}/></div>`,
     readConfig: (el) => ({
       tz: el.querySelector('[data-k="tz"]').value.trim(),
-      showSeconds: el.querySelector('[data-k="showSeconds"]').checked
+      clockStyle: el.querySelector('[data-k="clockStyle"]').value,
+      hour12: el.querySelector('[data-k="hour12"]').checked,
+      showSeconds: el.querySelector('[data-k="showSeconds"]').checked,
+      showProgress: el.querySelector('[data-k="showProgress"]').checked,
+      showDevInfo: el.querySelector('[data-k="showDevInfo"]').checked
     }),
     render: (el, c) => {
-      const opts = {
-        hour: "2-digit", minute: "2-digit", hour12: false,
-        timeZone: c.tz || undefined
-      };
-      if (c.showSeconds) opts.second = "2-digit";
-      const now = new Date();
-      const time = now.toLocaleTimeString(undefined, opts);
-      const date = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: c.tz || undefined });
-      const tz = c.tz ? now.toLocaleTimeString("en-US", { timeZone: c.tz, timeZoneName: "short" }).split(" ").pop() : (Intl.DateTimeFormat().resolvedOptions().timeZone);
-      el.innerHTML = `<div class="w-clock"><div class="time">${time}</div><div class="date">${date}</div><div class="sub">${tz}</div></div>`;
+      const data = getClockData(c.tz, c.hour12);
+      const style = c.clockStyle || "digital";
+      const showSecs = c.showSeconds !== false;
+      const showProg = c.showProgress !== false;
+      const showDev = c.showDevInfo !== false;
+
+      // In-place updates when existing DOM matches active configuration
+      const root = el.querySelector(".w-clock");
+      if (root && root.dataset.style === style && root.dataset.secs === String(showSecs) && root.dataset.h12 === String(c.hour12)) {
+        // Digital digits
+        const hEl = root.querySelector(".w-clock-h");
+        if (hEl) hEl.textContent = data.hh;
+        const mEl = root.querySelector(".w-clock-m");
+        if (mEl) mEl.textContent = data.mm;
+        const sEl = root.querySelector(".w-clock-s");
+        if (sEl) sEl.textContent = ":" + data.ss;
+        const apEl = root.querySelector(".w-clock-ampm");
+        if (apEl) apEl.textContent = data.dayPeriod;
+        const dEl = root.querySelector(".w-clock-date");
+        if (dEl) dEl.textContent = data.fullDate;
+        const wEl = root.querySelector(".w-clock-week");
+        if (wEl) wEl.textContent = "W" + data.weekNum;
+        const barEl = root.querySelector(".w-clock-progress-bar");
+        if (barEl) barEl.style.width = data.progressPct + "%";
+        const barLbl = root.querySelector(".w-clock-progress-lbl");
+        if (barLbl) barLbl.innerHTML = `<span>day ${data.progressPct}%</span><span>${data.hrsLeft}h ${data.minsLeft}m left</span>`;
+        const epEl = root.querySelector(".w-clock-epoch");
+        if (epEl) epEl.textContent = "#" + data.epoch;
+
+        // Analog hands
+        const hHand = root.querySelector(".clock-hand-h");
+        if (hHand) hHand.setAttribute("transform", `rotate(${data.hourDeg} 50 50)`);
+        const mHand = root.querySelector(".clock-hand-m");
+        if (mHand) mHand.setAttribute("transform", `rotate(${data.minDeg} 50 50)`);
+        const sHand = root.querySelector(".clock-hand-s");
+        if (sHand) sHand.setAttribute("transform", `rotate(${data.secDeg} 50 50)`);
+        return;
+      }
+
+      // Initial or config-changed render
+      let inner = "";
+
+      if (style === "analog") {
+        inner = `
+          <div class="w-clock-analog-wrap">
+            <div class="w-clock-analog-face" title="Analog clock face">${getAnalogClockSvg(data.hourDeg, data.minDeg, data.secDeg)}</div>
+            <div class="w-clock-analog-info" style="display:flex;flex-direction:column;gap:4px">
+              <div class="w-clock-main" title="Click to copy time">
+                <span class="w-clock-h">${data.hh}</span><span class="w-clock-colon">:</span><span class="w-clock-m">${data.mm}</span>
+                ${showSecs ? `<span class="w-clock-s">:${data.ss}</span>` : ""}
+                ${c.hour12 && data.dayPeriod ? `<span class="w-clock-ampm" title="Click to toggle 12h/24h">${data.dayPeriod}</span>` : ""}
+              </div>
+              <div class="w-clock-date-row" title="Click to copy date">
+                <span class="w-clock-date">${escapeHtml(data.fullDate)}</span>
+                <span class="w-clock-badge w-clock-week" title="Week ${data.weekNum}">W${data.weekNum}</span>
+              </div>
+            </div>
+          </div>`;
+      } else if (style === "hybrid") {
+        inner = `
+          <div class="w-clock-hybrid">
+            <div class="w-clock-analog-face">${getAnalogClockSvg(data.hourDeg, data.minDeg, data.secDeg)}</div>
+            <div class="w-clock-hybrid-body" style="flex:1">
+              <div class="w-clock-main" title="Click to copy time">
+                <span class="w-clock-h">${data.hh}</span><span class="w-clock-colon">:</span><span class="w-clock-m">${data.mm}</span>
+                ${showSecs ? `<span class="w-clock-s">:${data.ss}</span>` : ""}
+                ${c.hour12 && data.dayPeriod ? `<span class="w-clock-ampm" title="Click to toggle 12h/24h">${data.dayPeriod}</span>` : ""}
+              </div>
+              <div class="w-clock-date-row" title="Click to copy date">
+                <span class="w-clock-date">${escapeHtml(data.fullDate)}</span>
+                <span class="w-clock-badge w-clock-week" title="Week ${data.weekNum}">W${data.weekNum}</span>
+              </div>
+            </div>
+          </div>`;
+      } else {
+        // Digital mode
+        inner = `
+          <div class="w-clock-top">
+            <div class="w-clock-main" title="Click to copy time">
+              <span class="w-clock-h">${data.hh}</span><span class="w-clock-colon">:</span><span class="w-clock-m">${data.mm}</span>
+              ${showSecs ? `<span class="w-clock-s">:${data.ss}</span>` : ""}
+              ${c.hour12 && data.dayPeriod ? `<span class="w-clock-ampm" title="Click to toggle 12h/24h">${data.dayPeriod}</span>` : ""}
+            </div>
+            <button class="icon-btn clock-mode-btn" title="Cycle clock style (Digital / Hybrid / Analog)" aria-label="Cycle clock style">⟳</button>
+          </div>
+          <div class="w-clock-date-row" title="Click to copy date">
+            <span class="w-clock-date">${escapeHtml(data.fullDate)}</span>
+            <div class="w-clock-badges">
+              <span class="w-clock-badge w-clock-week" title="Week of the year">W${data.weekNum}</span>
+              <span class="w-clock-badge" title="Day of the year">D${data.dayOfYear}</span>
+            </div>
+          </div>`;
+      }
+
+      // Progress bar
+      if (showProg) {
+        inner += `
+          <div class="w-clock-progress-wrap" title="${data.progressPct}% of today has elapsed">
+            <div class="w-clock-progress-track">
+              <div class="w-clock-progress-bar" style="width:${data.progressPct}%"></div>
+            </div>
+            <div class="w-clock-progress-lbl">
+              <span>day ${data.progressPct}%</span>
+              <span>${data.hrsLeft}h ${data.minsLeft}m left</span>
+            </div>
+          </div>`;
+      }
+
+      // Developer Metadata Chips
+      if (showDev) {
+        inner += `
+          <div class="w-clock-meta">
+            <span class="w-clock-chip w-clock-tz-chip" title="Click to copy ISO timestamp (${escapeHtml(data.iso)})">
+              🌐 ${escapeHtml(data.tzAbbr)} · ${data.offset}
+            </span>
+            <span class="w-clock-chip w-clock-epoch" title="Click to copy Unix timestamp">
+              #${data.epoch}
+            </span>
+          </div>`;
+      }
+
+      el.innerHTML = `<div class="w-clock" data-style="${style}" data-secs="${showSecs}" data-h12="${c.hour12}">${inner}</div>`;
+
+      // Interactive Click Handlers
+      const clockEl = el.querySelector(".w-clock");
+      if (!clockEl) return;
+
+      // Click time to copy
+      const mainEl = clockEl.querySelector(".w-clock-main");
+      if (mainEl) {
+        mainEl.onclick = (e) => {
+          if (e.target.classList.contains("w-clock-ampm")) return;
+          const timeStr = `${data.hh}:${data.mm}${showSecs ? ":" + data.ss : ""}${data.dayPeriod ? " " + data.dayPeriod : ""}`;
+          navigator.clipboard.writeText(timeStr).then(() => toast(`Copied time: ${timeStr}`)).catch(() => {});
+        };
+      }
+
+      // Click AM/PM to toggle 12h/24h format
+      const ampmBtn = clockEl.querySelector(".w-clock-ampm");
+      if (ampmBtn) {
+        ampmBtn.onclick = (e) => {
+          e.stopPropagation();
+          c.hour12 = !c.hour12;
+          save();
+          renderWidgets();
+          toast(`Switched to ${c.hour12 ? "12-hour" : "24-hour"} clock`);
+        };
+      }
+
+      // Click date to copy
+      const dateEl = clockEl.querySelector(".w-clock-date-row");
+      if (dateEl) {
+        dateEl.onclick = () => {
+          navigator.clipboard.writeText(data.fullDate).then(() => toast(`Copied date: ${data.fullDate}`)).catch(() => {});
+        };
+      }
+
+      // Click style toggle button
+      const styleBtn = clockEl.querySelector(".clock-mode-btn");
+      if (styleBtn) {
+        styleBtn.onclick = (e) => {
+          e.stopPropagation();
+          const next = style === "digital" ? "hybrid" : style === "hybrid" ? "analog" : "digital";
+          c.clockStyle = next;
+          save();
+          renderWidgets();
+          toast(`Clock style: ${next}`);
+        };
+      }
+
+      // Click epoch chip to copy Unix epoch
+      const epochChip = clockEl.querySelector(".w-clock-epoch");
+      if (epochChip) {
+        epochChip.onclick = () => {
+          navigator.clipboard.writeText(String(data.epoch)).then(() => toast(`Copied timestamp: ${data.epoch}`)).catch(() => {});
+        };
+      }
+
+      // Click timezone chip to copy ISO 8601
+      const tzChip = clockEl.querySelector(".w-clock-tz-chip");
+      if (tzChip) {
+        tzChip.onclick = () => {
+          navigator.clipboard.writeText(data.iso).then(() => toast(`Copied ISO timestamp: ${data.iso}`)).catch(() => {});
+        };
+      }
     }
   },
 
