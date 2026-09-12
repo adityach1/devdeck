@@ -4285,11 +4285,11 @@ function toolGoogleHome() {
         <div id="ghomeSettingsBox" style="display:${showAuthForm ? "block" : "none"};margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
           <div class="row" style="gap:8px;margin-bottom:6px">
             <div style="flex:1">
-              <label style="font-size:11px;color:var(--muted)">Nest Device Access Project ID</label>
+              <label style="font-size:11px;color:var(--muted)">Nest Project ID (Optional — only for Nest Thermostats/Cams)</label>
               <input type="text" id="ghomeSettingsPid" value="${escapeHtml(auth.projectId || "")}" placeholder="enterprises/xxxx-xxxx or UUID" style="width:100%;padding:5px;font-size:11px;background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--fg)">
             </div>
             <div style="flex:1">
-              <label style="font-size:11px;color:var(--muted)">OAuth Client ID</label>
+              <label style="font-size:11px;color:var(--muted)">OAuth Client ID (from GCP Console)</label>
               <input type="text" id="ghomeSettingsCid" value="${escapeHtml(auth.clientId || "")}" placeholder="xxxx.apps.googleusercontent.com" style="width:100%;padding:5px;font-size:11px;background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--fg)">
             </div>
           </div>
@@ -4300,6 +4300,9 @@ function toolGoogleHome() {
       `;
 
       document.getElementById("ghomeSyncBtn").onclick = () => {
+        if (!auth.projectId) {
+          toast("Nest Project ID is only needed for Google Nest Thermostats/Cams");
+        }
         syncGoogleDevices(() => renderModalView());
       };
 
@@ -4338,7 +4341,7 @@ function toolGoogleHome() {
               <span>Google Account Integration</span>
               <span style="font-size:10px;color:var(--dim);border:1px solid var(--border);padding:1px 6px;border-radius:999px">Optional</span>
             </div>
-            <div style="font-size:11px;color:var(--muted)">Connect to control live Google Nest thermostats, displays, and Home devices.</div>
+            <div style="font-size:11px;color:var(--muted)">Connect to link your Google Account and manage your smart home.</div>
           </div>
           <div class="ghome-auth-actions">
             <button id="ghomeSignInBtn" class="ghome-google-btn">
@@ -4362,8 +4365,8 @@ function toolGoogleHome() {
               <input type="password" id="ghomeManualToken" placeholder="ya29.a0..." style="width:100%;padding:5px;font-size:11px;background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--fg)">
             </div>
             <div style="flex:1">
-              <label style="font-size:11px;color:var(--muted)">Nest Device Access Project ID</label>
-              <input type="text" id="ghomeManualPid" value="${escapeHtml(auth.projectId || "")}" placeholder="enterprises/xxxx or UUID" style="width:100%;padding:5px;font-size:11px;background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--fg)">
+              <label style="font-size:11px;color:var(--muted)">Nest Project ID (Optional — only for Nest hardware)</label>
+              <input type="text" id="ghomeManualPid" value="${escapeHtml(auth.projectId || "")}" placeholder="enterprises/xxxx or UUID (Optional)" style="width:100%;padding:5px;font-size:11px;background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--fg)">
             </div>
           </div>
           <div class="field" style="margin-bottom:8px">
@@ -4377,11 +4380,16 @@ function toolGoogleHome() {
 
         <!-- Guide Box -->
         <div id="ghomeGuideBox" class="ghome-guide-box" style="display:${showGuide ? "block" : "none"}">
-          <strong>How to connect Google Home / Nest to DevDeck:</strong>
+          <strong>Do you need a Nest Project ID?</strong>
+          <ul style="margin:4px 0 8px 16px;padding:0">
+            <li><strong>NO</strong> — for standard smart lights, plugs, switches, or appliances linked in Google Home. You do NOT need a Nest ID or fee. Manage them directly in DevDeck, launch <a href="https://home.google.com/" target="_blank" rel="noopener" style="color:var(--accent)">Google Home Web</a>, or trigger them via webhooks!</li>
+            <li><strong>YES</strong> — only if you want to sync first-party Google Nest hardware (Nest Thermostats, Nest Cams, Nest Doorbells) via Google's SDM API.</li>
+          </ul>
+          <strong>How to connect Google Home:</strong>
           <ol>
-            <li>Enable <em>Smart Device Management API</em> in the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener" style="color:var(--accent)">Google Cloud Console</a> and create an OAuth 2.0 Web Client ID.</li>
-            <li>Register in the <a href="https://console.nest.google.com/device-access" target="_blank" rel="noopener" style="color:var(--accent)">Nest Device Access Console</a> ($5 one-time fee) and link your GCP OAuth Client ID to get your Project ID.</li>
-            <li>Click <strong>Sign in with Google</strong> (or paste an OAuth access token) to automatically control live Nest thermostats and devices.</li>
+            <li>Sign in with Google or launch <a href="https://home.google.com/" target="_blank" rel="noopener" style="color:var(--accent)">Google Home Web</a> in 1-click to control all your connected devices.</li>
+            <li>Add devices in DevDeck with <strong>+ Add Device</strong> (customize rooms, on/off, brightness, or optional webhooks).</li>
+            <li>If you have Nest Thermostats/Cams, you can optionally enable the <em>Smart Device Management API</em> in GCP and add your Nest Project ID.</li>
           </ol>
         </div>
       `;
