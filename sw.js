@@ -1,7 +1,7 @@
 // Service worker for DevDeck.
 // Uses network-first for navigation (HTML) so updates are immediate, and cache-first for static assets with offline fallback.
-const CACHE = "devdeck-v9";
-const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
+const CACHE = "devdeck-v10";
+const ASSETS = ["./", "./index.html", "./app.js", "./manifest.webmanifest", "./icon.svg"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

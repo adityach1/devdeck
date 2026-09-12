@@ -3,6 +3,7 @@
 > A fast, privacy-focused, zero-dependency developer startpage and flight deck designed for daily productivity. Fully responsive, offline-ready (PWA), and packed with built-in developer tools.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Chrome Extension](https://img.shields.io/badge/Chrome-Extension%20MV3-4285F4?logo=googlechrome&logoColor=white)](manifest.json)
 [![Deployed on Cloudflare Pages](https://img.shields.io/badge/Deployed%20on-Cloudflare%20Pages-F38020?logo=cloudflare&logoColor=white)](https://pages.cloudflare.com/)
 [![PWA Ready](https://img.shields.io/badge/PWA-Ready-green.svg)](manifest.webmanifest)
 [![Vanilla JS](https://img.shields.io/badge/Vanilla-JS-yellow.svg)](index.html)
@@ -24,6 +25,7 @@
 - [Encrypted Secrets Vault](#-encrypted-secrets-vault)
 - [Keyboard Shortcuts](#-keyboard-shortcuts)
 - [Customization](#-customization)
+- [Chrome Extension Installation](#-chrome-extension-installation)
 - [Cloudflare Pages Deployment](#-cloudflare-pages-deployment)
 - [Local Development](#-local-development)
 - [Browser New Tab Setup](#-browser-new-tab-setup)
@@ -207,6 +209,23 @@ Click the **⚙️ Settings** icon in the header or press `Alt + C`:
   - Wallpaper Blur (`0px` to `20px`) and Brightness (`20%` to `100%`) adjustment sliders.
 - **Profiles:** Create separate profiles for `Work`, `Personal`, or `Dev` with isolated bookmarks, widgets, and scratchpads.
 - **Backup & Restore:** Full JSON export and import of all startpage preferences and configs.
+
+---
+
+## 🧩 Chrome Extension Installation
+
+DevDeck can be installed directly into Google Chrome, Brave, Arc, Edge, or any Chromium-based browser as a native Manifest V3 New Tab extension:
+
+### Quick Install (Load Unpacked)
+
+1. Open your browser and navigate to `chrome://extensions` (or `edge://extensions` / `brave://extensions`).
+2. Enable **Developer mode** via the toggle switch in the top-right corner.
+3. Click the **Load unpacked** button in the top-left toolbar.
+4. Select the repository root folder (`adityach1.github.io`).
+5. Open a new tab (`Cmd+T` or `Ctrl+T`) — DevDeck is now your official new tab dashboard!
+
+> [!TIP]
+> You can also click the DevDeck icon in your browser's toolbar at any time to instantly open a new DevDeck dashboard tab.
 
 ---
 
