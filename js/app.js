@@ -2888,16 +2888,39 @@ omni.addEventListener("keydown", (e) => {
   }
 });
 
+function getEngineIconSvg(key) {
+  const icons = {
+    ddg: `<svg viewBox="0 0 24 24" width="15" height="15"><circle cx="12" cy="12" r="11" fill="#DE5833"/><path fill="#FFF" d="M12 5.2c-2.4 0-4.3 1.8-4.3 4.1 0 1.9 1.2 3.5 2.8 4v.7c-.8.3-1.6.8-2.2 1.5-.6.7-.9 1.4-.9 2.2 0 .9.8 1.5 2.2 1.5h4.8c1.4 0 2.2-.6 2.2-1.5 0-.8-.3-1.5-.9-2.2-.6-.7-1.4-1.2-2.2-1.5v-.7c1.6-.5 2.8-2.1 2.8-4 0-2.3-1.9-4.1-4.3-4.1z"/><ellipse cx="14" cy="8.2" rx="1.2" ry="1" fill="#DE5833"/><circle cx="14.3" cy="8.1" r=".45" fill="#222"/><path fill="#F9A825" d="M12 9.2c.6 0 2 .3 2.6 1 .2.2.1.6-.2.7-.8.3-2.2.3-2.8 0-.3-.2-.2-.5 0-.7.1-.4.2-.7.4-1z"/><path fill="#43A047" d="M10.8 14.6c.7.4 1.7.4 2.4 0 .3-.2.6-.1.8.1.1.2.1.5-.1.7-1 .7-2.6.7-3.6 0-.2-.2-.3-.5-.1-.7.2-.2.5-.3.8-.1z"/></svg>`,
+    google: `<svg viewBox="0 0 24 24" width="15" height="15"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.17 0 9.99 0 12s.45 3.83 1.25 5.42l4.03-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>`,
+    bing: `<svg viewBox="0 0 24 24" width="15" height="15"><path fill="#00839B" d="M5 2.5v16.2l4.8 2.8 8.7-5.1V12.1l-7.3-2.5V5.5L5 2.5zm4.8 6.4l5.3 1.9-5.3 3.1V8.9z"/></svg>`,
+    brave: `<svg viewBox="0 0 24 24" width="15" height="15"><path fill="#FB542B" d="M12 1.6l-6.9 3.8.4 6.1c.2 2.6 1.7 5 3.9 6.2l2.6 1.4 2.6-1.4c2.2-1.2 3.7-3.6 3.9-6.2l.4-6.1L12 1.6zm0 2.3l4.9 2.7-.3 4.5c-.1 1.9-1.3 3.7-2.9 4.6L12 16.7l-1.6-.9c-1.6-.9-2.8-2.7-2.9-4.6l-.3-4.5L12 3.9z"/></svg>`,
+    kagi: `<svg viewBox="0 0 24 24" width="15" height="15"><circle cx="12" cy="12" r="11" fill="#FFC933"/><path fill="#1A1A1A" d="M8.5 6.5h2.3v4.6l3.8-4.6h2.8l-4.4 5.1 4.7 6.9h-2.9l-3.3-5-1 1.1v3.9H8.5V6.5z"/></svg>`,
+    chatgpt: `<svg viewBox="0 0 24 24" width="15" height="15"><path fill="#10A37F" d="M22.28 9.82a5.98 5.98 0 0 0-.52-4.91 6.05 6.05 0 0 0-6.51-2.9A6.07 6.07 0 0 0 4.98 4.18a5.98 5.98 0 0 0-4 2.9 6.05 6.05 0 0 0 .74 7.1 5.98 5.98 0 0 0 .51 4.91 6.05 6.05 0 0 0 6.51 2.9A5.98 5.98 0 0 0 13.26 24a6.06 6.06 0 0 0 5.77-4.21 5.99 5.99 0 0 0 4-2.9 6.06 6.06 0 0 0-.75-7.07zm-9.02 12.61a4.48 4.48 0 0 1-2.88-1.04l.14-.08 4.78-2.76a.79.79 0 0 0 .39-.68v-6.74l2.02 1.17a.07.07 0 0 1 .04.05v5.58a4.5 4.5 0 0 1-4.49 4.5zm-9.66-5a4.47 4.47 0 0 1-.53-3.01l.14.08 4.78 2.76a.77.77 0 0 0 .78 0l5.84-3.37v2.33a.08.08 0 0 1-.03.06L9.74 19.95a4.5 4.5 0 0 1-6.14-2.52zM2.34 7.9a4.49 4.49 0 0 1 2.37-1.97v5.67a.77.77 0 0 0 .38.68l5.82 3.35-2.02 1.17a.08.08 0 0 1-.07 0l-4.83-2.79A4.5 4.5 0 0 1 2.34 7.9zm16.6 3.85L13.1 8.36l2.02-1.16a.08.08 0 0 1 .08 0l4.83 2.79a4.49 4.49 0 0 1-.67 8.1V12.42a.79.79 0 0 0-.41-.67zm2.01-3.02l-.14-.09-4.77-2.78a.78.78 0 0 0-.79 0L9.41 9.23V6.9a.07.07 0 0 1 .03-.06l4.83-2.79a4.5 4.5 0 0 1 6.68 4.66zM8.31 12.86l-2.02-1.16a.08.08 0 0 1-.04-.06V6.07a4.5 4.5 0 0 1 7.38-3.45l-.14.08-4.78 2.76a.79.79 0 0 0-.39.68zm1.1-2.37l2.6-1.5 2.6 1.5v3l-2.6 1.5-2.6-1.5z"/></svg>`,
+    claude: `<svg viewBox="0 0 24 24" width="15" height="15"><path fill="#D97757" d="M12 2a1.2 1.2 0 0 1 1.2 1.2v2.9a1.2 1.2 0 0 1-2.4 0V3.2A1.2 1.2 0 0 1 12 2zm6.36 3.64a1.2 1.2 0 0 1 0 1.7l-2.05 2.05a1.2 1.2 0 1 1-1.7-1.7l2.05-2.05a1.2 1.2 0 0 1 1.7 0zM22 12a1.2 1.2 0 0 1-1.2 1.2h-2.9a1.2 1.2 0 1 1 0-2.4h2.9A1.2 1.2 0 0 1 22 12zm-3.64 6.36a1.2 1.2 0 0 1-1.7 0l-2.05-2.05a1.2 1.2 0 0 1 1.7-1.7l2.05 2.05a1.2 1.2 0 0 1 0 1.7zM12 22a1.2 1.2 0 0 1-1.2-1.2v-2.9a1.2 1.2 0 1 1 2.4 0v2.9A1.2 1.2 0 0 1 12 22zm-6.36-3.64a1.2 1.2 0 0 1 0-1.7l2.05-2.05a1.2 1.2 0 0 1 1.7 1.7l-2.05 2.05a1.2 1.2 0 0 1-1.7 0zM2 12a1.2 1.2 0 0 1 1.2-1.2h2.9a1.2 1.2 0 1 1 0 2.4H3.2A1.2 1.2 0 0 1 2 12zm3.64-6.36a1.2 1.2 0 0 1 1.7 0l2.05 2.05a1.2 1.2 0 1 1-1.7 1.7L5.64 7.34a1.2 1.2 0 0 1 0-1.7z"/></svg>`,
+    gemini: `<svg viewBox="0 0 24 24" width="15" height="15"><defs><linearGradient id="geminiGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1BA1E3"/><stop offset="50%" stop-color="#5479F7"/><stop offset="100%" stop-color="#9B72CB"/></linearGradient></defs><path fill="url(#geminiGrad)" d="M12 0C12 6.627 6.627 12 0 12c6.627 0 12 5.373 12 12 0-6.627 5.373-12 12-12-6.627 0-12-5.373-12-12z"/></svg>`,
+    perplexity: `<svg viewBox="0 0 24 24" width="15" height="15"><path fill="#20B2AA" d="M12 1.5a.75.75 0 0 0-.75.75v3.44L8.3 3.25a.75.75 0 0 0-1.06 1.06l2.44 2.44H6.25a.75.75 0 0 0 0 1.5h3.44L7.25 10.7a.75.75 0 1 0 1.06 1.06l2.44-2.44v3.43a.75.75 0 0 0 1.5 0v-3.43l2.44 2.44a.75.75 0 0 0 1.06-1.06L13.3 8.25h3.45a.75.75 0 0 0 0-1.5h-3.44l2.44-2.44a.75.75 0 0 0-1.06-1.06l-2.44 2.44V2.25A.75.75 0 0 0 12 1.5zm0 5a1.75 1.75 0 1 1 0 3.5 1.75 1.75 0 0 1 0-3.5z"/></svg>`
+  };
+  return icons[key] || `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`;
+}
+
 function renderEngineSwitch() {
   const el = document.getElementById("engineSwitch");
+  if (!el) return;
   el.innerHTML = "";
   Object.entries(cfg.engines).forEach(([key, eng]) => {
     const b = document.createElement("button");
-    b.className = "icon-btn" + (key === cfg.defaultEngine ? " active" : "");
-    if (key === cfg.defaultEngine) { b.style.color = "var(--fg)"; b.style.background = "var(--panel-2)"; }
-    b.textContent = eng.name;
-    b.title = `Default search engine: ${eng.name}`;
-    b.onclick = () => { cfg.defaultEngine = key; save(); renderEngineSwitch(); renderBangHint(); toast("default: " + eng.name); };
+    const isActive = key === cfg.defaultEngine;
+    b.className = "icon-btn engine-switch-btn" + (isActive ? " active" : "");
+    b.innerHTML = getEngineIconSvg(key);
+    b.title = `Default: ${eng.name}`;
+    b.setAttribute("aria-label", `Default search engine: ${eng.name}`);
+    b.onclick = () => {
+      cfg.defaultEngine = key;
+      save();
+      renderEngineSwitch();
+      renderBangHint();
+      toast("default: " + eng.name);
+    };
     el.appendChild(b);
   });
 }

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "DevDeck - Developer Startpage & Dashboard",
+  "name": "DevDeck",
   "short_name": "DevDeck",
   "version": "1.0.0",
   "description": "Fast, privacy-focused developer startpage, dashboard, and offline tool suite.",
