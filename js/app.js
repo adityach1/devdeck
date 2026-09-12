@@ -550,6 +550,7 @@ const WIDGETS = {
     icon: "⭐",
     desc: "Quick bookmark tiles with auto-favicons.",
     defaults: {
+      title: "Speed Dial",
       items: [
         { label: "GitHub", url: "https://github.com" },
         { label: "Hacker News", url: "https://news.ycombinator.com" },
@@ -561,9 +562,12 @@ const WIDGETS = {
     },
     refresh: 0,
     config: (c) => `
+      <div class="wrow"><label style="flex:1">Widget title</label>
+        <input type="text" data-k="title" value="${escapeHtml(c.title || "Speed Dial")}" placeholder="Speed Dial"/></div>
       <label>Bookmarks (Label = URL, one per line)</label>
       <textarea data-k="items" rows="6">${escapeHtml((c.items||[]).map(i => `${i.label} = ${i.url}`).join("\n"))}</textarea>`,
     readConfig: (el) => ({
+      title: (el.querySelector('[data-k="title"]')?.value || "").trim() || "Speed Dial",
       items: el.querySelector('[data-k="items"]').value.split("\n").map(l => l.trim()).filter(Boolean).map(line => {
         const idx = line.indexOf("=");
         if (idx === -1) return { label: line, url: line.startsWith("http") ? line : "https://" + line };
@@ -587,8 +591,65 @@ const WIDGETS = {
             return `
               <a class="w-bm-item" href="${escapeHtml(b.url)}" target="_blank" rel="noopener" title="${escapeHtml(b.label)} (${escapeHtml(b.url)})">
                 <div class="w-bm-icon">
-                  <img src="${favUrl}" alt="" loading="lazy" class="bm-fav"/>
+                  <img src="${favUrl}" alt="" loading="lazy" class="bm-fav" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"/>
                   <span style="display:none;font-size:14px">🔖</span>
+                </div>
+                <div class="w-bm-title">${escapeHtml(b.label)}</div>
+              </a>`;
+          }).join("")}
+        </div>`;
+    }
+  },
+
+  /* ---------- Entertainment Speed Dial ---------- */
+  entertainment: {
+    name: "Entertainment",
+    icon: "🍿",
+    desc: "Streaming & media speed dial (Netflix, Prime, JioHotstar, YouTube, Bilibili, Dailymotion).",
+    defaults: {
+      title: "Entertainment",
+      items: [
+        { label: "Netflix",     url: "https://www.netflix.com" },
+        { label: "Prime Video", url: "https://www.primevideo.com" },
+        { label: "JioHotstar",  url: "https://www.hotstar.com" },
+        { label: "YouTube",     url: "https://www.youtube.com" },
+        { label: "Bilibili",    url: "https://www.bilibili.com" },
+        { label: "Dailymotion", url: "https://www.dailymotion.com" }
+      ]
+    },
+    refresh: 0,
+    config: (c) => `
+      <div class="wrow"><label style="flex:1">Widget title</label>
+        <input type="text" data-k="title" value="${escapeHtml(c.title || "Entertainment")}" placeholder="Entertainment"/></div>
+      <label>Bookmarks (Label = URL, one per line)</label>
+      <textarea data-k="items" rows="6">${escapeHtml((c.items||[]).map(i => `${i.label} = ${i.url}`).join("\n"))}</textarea>`,
+    readConfig: (el) => ({
+      title: (el.querySelector('[data-k="title"]')?.value || "").trim() || "Entertainment",
+      items: el.querySelector('[data-k="items"]').value.split("\n").map(l => l.trim()).filter(Boolean).map(line => {
+        const idx = line.indexOf("=");
+        if (idx === -1) return { label: line, url: line.startsWith("http") ? line : "https://" + line };
+        const label = line.slice(0, idx).trim();
+        const url = line.slice(idx + 1).trim();
+        return { label: label || url, url: url.startsWith("http") ? url : "https://" + url };
+      })
+    }),
+    render: (el, c) => {
+      const items = c.items || [];
+      if (!items.length) {
+        el.innerHTML = `<div style="color:var(--dim);font-size:12px;text-align:center;padding:12px">No bookmarks configured</div>`;
+        return;
+      }
+      el.innerHTML = `
+        <div class="w-bookmarks">
+          ${items.map(b => {
+            let domain = "";
+            try { domain = new URL(b.url).hostname; } catch { domain = b.url; }
+            const favUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`;
+            return `
+              <a class="w-bm-item" href="${escapeHtml(b.url)}" target="_blank" rel="noopener" title="${escapeHtml(b.label)} (${escapeHtml(b.url)})">
+                <div class="w-bm-icon">
+                  <img src="${favUrl}" alt="" loading="lazy" class="bm-fav" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"/>
+                  <span style="display:none;font-size:14px">🎬</span>
                 </div>
                 <div class="w-bm-title">${escapeHtml(b.label)}</div>
               </a>`;
@@ -671,7 +732,11 @@ const DEFAULTS = {
     aw:       { name: "ArchWiki",      url: "https://wiki.archlinux.org/index.php?search={q}" },
     maps:     { name: "Google Maps",   url: "https://www.google.com/maps/search/{q}" },
     arxiv:    { name: "arXiv",         url: "https://arxiv.org/search/?query={q}&searchtype=all" },
-    ghome:    { name: "Google Home",   url: "https://home.google.com/" }
+    ghome:    { name: "Google Home",   url: "https://home.google.com/" },
+    nflx:     { name: "Netflix",       url: "https://www.netflix.com/search?q={q}" },
+    prime:    { name: "Prime Video",   url: "https://www.primevideo.com/search/ref=atv_nb_sr?phrase={q}" },
+    bili:     { name: "Bilibili",      url: "https://search.bilibili.com/all?keyword={q}" },
+    dm:       { name: "Dailymotion",   url: "https://www.dailymotion.com/search/{q}" }
   },
   engines: {
     ddg:        { name: "DuckDuckGo", url: "https://duckduckgo.com/?q={q}" },
@@ -775,6 +840,7 @@ const DEFAULTS = {
     { id: "w-clock-1",   type: "clock",      config: {} },
     { id: "w-weather-1", type: "weather",    config: { lat: 28.689560383588127, lon: 77.29471663673375, place: "New Delhi" } },
     { id: "w-bm-1",      type: "bookmarks",  config: {
+        title: "Speed Dial",
         items: [
           { label: "GitHub", url: "https://github.com" },
           { label: "Hacker News", url: "https://news.ycombinator.com" },
@@ -782,6 +848,18 @@ const DEFAULTS = {
           { label: "Reddit", url: "https://reddit.com" },
           { label: "StackOverflow", url: "https://stackoverflow.com" },
           { label: "ChatGPT", url: "https://chatgpt.com" }
+        ]
+      }
+    },
+    { id: "w-ent-1",     type: "entertainment", config: {
+        title: "Entertainment",
+        items: [
+          { label: "Netflix",     url: "https://www.netflix.com" },
+          { label: "Prime Video", url: "https://www.primevideo.com" },
+          { label: "JioHotstar",  url: "https://www.hotstar.com" },
+          { label: "YouTube",     url: "https://www.youtube.com" },
+          { label: "Bilibili",    url: "https://www.bilibili.com" },
+          { label: "Dailymotion", url: "https://www.dailymotion.com" }
         ]
       }
     },
@@ -823,6 +901,17 @@ function load() {
     }
     // Google Home is accessed as a Tool, not as a dashboard widget
     merged.widgets = (merged.widgets || []).filter(w => w.type !== "googlehome");
+
+    // Auto-add Entertainment speed dial widget if not already added
+    if (Array.isArray(merged.widgets) && !merged.widgets.some(w => w.type === "entertainment" || w.id === "w-ent-1")) {
+      const entMigrated = localStorage.getItem("devdeck.ent_widget_added");
+      if (!entMigrated) {
+        const entDef = DEFAULTS.widgets.find(w => w.type === "entertainment");
+        if (entDef) merged.widgets.push(structuredClone(entDef));
+        try { localStorage.setItem("devdeck.ent_widget_added", "1"); } catch {}
+      }
+    }
+
     return merged;
   } catch { return structuredClone(DEFAULTS); }
 }
@@ -1344,11 +1433,13 @@ function renderWidgets() {
     const def = WIDGETS[w.type];
     if (!def) return;
     const card = document.createElement("div");
-    card.className = "widget";
+    card.className = "widget" + (w.wide ? " wide" : "");
+    const wTitle = (w.config && w.config.title) || def.name;
+    const wIcon = (w.config && w.config.icon) || def.icon;
     card.innerHTML = `
       <div class="widget-head">
-        <div class="widget-title"><span class="w-ico">${def.icon}</span>${escapeHtml(def.name)}</div>
-        <button class="widget-menu" aria-label="Options for ${escapeHtml(def.name)}" data-menu="${w.id}">⋯</button>
+        <div class="widget-title"><span class="w-ico">${wIcon}</span>${escapeHtml(wTitle)}</div>
+        <button class="widget-menu" aria-label="Options for ${escapeHtml(wTitle)}" data-menu="${w.id}">⋯</button>
       </div>
       <div class="widget-body loading">loading…</div>
     `;
@@ -1405,9 +1496,10 @@ function openWidgetMenu(id, card) {
   const w = widgetById(id);
   if (!w) return;
   const def = WIDGETS[w.type];
+  const wTitle = (w.config && w.config.title) || def.name;
   const rect = card.getBoundingClientRect();
   // simple inline popover using modal for reliability
-  openModal(`Widget: ${def.name}`, `
+  openModal(`Widget: ${wTitle}`, `
     <p class="hint-text">${escapeHtml(def.desc)}</p>
     <div class="w-config" id="wCfgForm">
       ${def.config ? def.config(w.config || {}) : `<p style="color:var(--muted);font-size:12px">This widget has no configuration.</p>`}
