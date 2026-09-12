@@ -687,6 +687,8 @@ const DEFAULTS = {
   theme: "auto",
   accent: "#7aa8ff",
   wallpaper: "",
+  wallpaperName: "",
+  wallpaperType: "",
   wallpaperBlur: 0,
   wallpaperDim: 0.4,
   activeProfile: "all",
@@ -807,6 +809,94 @@ function setUndo(type, item, index) {
 }
 
 /* ============================================================
+   INDEXEDDB LOCAL WALLPAPER STORAGE
+   ============================================================ */
+const IDB_WP_NAME = "devdeck_media";
+const IDB_WP_STORE = "wallpapers";
+
+function getWallpaperDB() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) return reject(new Error("IndexedDB not supported"));
+    const req = indexedDB.open(IDB_WP_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(IDB_WP_STORE)) {
+        db.createObjectStore(IDB_WP_STORE);
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveLocalWallpaper(blob) {
+  try {
+    const db = await getWallpaperDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_WP_STORE, "readwrite");
+      const store = tx.objectStore(IDB_WP_STORE);
+      store.put(blob, "active_wallpaper");
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (err) {
+    console.error("Failed to save local wallpaper to IndexedDB:", err);
+    return false;
+  }
+}
+
+async function getLocalWallpaper() {
+  try {
+    const db = await getWallpaperDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_WP_STORE, "readonly");
+      const store = tx.objectStore(IDB_WP_STORE);
+      const req = store.get("active_wallpaper");
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  } catch (err) {
+    console.warn("Failed to retrieve local wallpaper:", err);
+    return null;
+  }
+}
+
+async function deleteLocalWallpaper() {
+  try {
+    const db = await getWallpaperDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_WP_STORE, "readwrite");
+      const store = tx.objectStore(IDB_WP_STORE);
+      store.delete("active_wallpaper");
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (err) {
+    console.warn("Failed to delete local wallpaper from IndexedDB:", err);
+    return false;
+  }
+}
+
+function formatFileSize(bytes) {
+  if (!bytes || bytes <= 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+}
+
+const WP_PRESETS = [
+  { name: "Cyberpunk Neon", url: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=1920&q=80" },
+  { name: "Deep Space", url: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1920&q=80" },
+  { name: "Tokyo Night", url: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1920&q=80" },
+  { name: "Dark Geometry", url: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1920&q=80" },
+  { name: "Minimal Mountain", url: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80" },
+  { name: "Forest Mist", url: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1920&q=80" }
+];
+
+let activeWallpaperBlobUrl = null;
+
+/* ============================================================
    THEME & WALLPAPER
    ============================================================ */
 function applyTheme() {
@@ -821,20 +911,40 @@ function applyTheme() {
 
   // Wallpaper background
   const bg = document.getElementById("bgWallpaper");
-  if (bg) {
-    const raw = (cfg.wallpaper || "").trim();
-    const isSafe = raw && /^(https?:\/\/|data:image\/|blob:)/i.test(raw);
-    if (isSafe) {
-      bg.style.backgroundImage = `url("${raw.replace(/"/g, "%22")}")`;
-      const blur = cfg.wallpaperBlur ?? 0;
-      const dim = cfg.wallpaperDim ?? 0.4;
-      bg.style.filter = blur > 0 ? `blur(${blur}px)` : "none";
-      bg.style.opacity = (1 - dim).toString();
-      bg.style.display = "block";
-    } else {
+  if (!bg) return;
+
+  const raw = (cfg.wallpaper || "").trim();
+  const blur = cfg.wallpaperBlur ?? 0;
+  const dim = cfg.wallpaperDim ?? 0.4;
+  bg.style.filter = blur > 0 ? `blur(${blur}px)` : "none";
+  bg.style.opacity = (1 - dim).toString();
+
+  if (raw === "local") {
+    getLocalWallpaper().then(blob => {
+      if (blob && cfg.wallpaper === "local") {
+        if (activeWallpaperBlobUrl) URL.revokeObjectURL(activeWallpaperBlobUrl);
+        activeWallpaperBlobUrl = URL.createObjectURL(blob);
+        bg.style.backgroundImage = `url("${activeWallpaperBlobUrl}")`;
+        bg.style.display = "block";
+      } else if (cfg.wallpaper !== "local") {
+        // user switched away from local wallpaper
+      } else {
+        bg.style.display = "none";
+        bg.style.backgroundImage = "none";
+      }
+    }).catch(e => {
+      console.warn("Could not load local wallpaper from IndexedDB:", e);
       bg.style.display = "none";
       bg.style.backgroundImage = "none";
-    }
+    });
+  } else if (raw && /^(https?:\/\/|data:image\/|blob:)/i.test(raw)) {
+    if (activeWallpaperBlobUrl) { URL.revokeObjectURL(activeWallpaperBlobUrl); activeWallpaperBlobUrl = null; }
+    bg.style.backgroundImage = `url("${raw.replace(/"/g, "%22")}")`;
+    bg.style.display = "block";
+  } else {
+    if (activeWallpaperBlobUrl) { URL.revokeObjectURL(activeWallpaperBlobUrl); activeWallpaperBlobUrl = null; }
+    bg.style.display = "none";
+    bg.style.backgroundImage = "none";
   }
 }
 
@@ -850,6 +960,9 @@ function openThemeModal() {
     { name: "Orange", hex: "#fb923c" },
     { name: "Coral", hex: "#ff6b6b" }
   ];
+
+  const initialWpType = cfg.wallpaper === "local" ? "local" : (cfg.wallpaperType === "preset" || WP_PRESETS.some(p => p.url === cfg.wallpaper) ? "presets" : (cfg.wallpaper ? "url" : "local"));
+
   openModal("Appearance & Wallpaper", `
     <div class="field">
       <label>Base Theme</label>
@@ -870,8 +983,51 @@ function openThemeModal() {
       </div>
     </div>
     <div class="field">
-      <label>Background Wallpaper URL</label>
-      <input type="text" id="thWallpaper" value="${escapeHtml(cfg.wallpaper||'')}" placeholder="https://images.unsplash.com/... or local path"/>
+      <label>Background Wallpaper</label>
+      <div class="tabs" style="margin-bottom:12px">
+        <button type="button" class="tb ${initialWpType==='local'?'active':''}" id="tabWpLocal">📁 Local Storage</button>
+        <button type="button" class="tb ${initialWpType==='presets'?'active':''}" id="tabWpPresets">✨ Curated Presets</button>
+        <button type="button" class="tb ${initialWpType==='url'?'active':''}" id="tabWpUrl">🔗 Image URL</button>
+      </div>
+
+      <!-- Local File Upload Panel -->
+      <div id="wpPanelLocal" style="${initialWpType==='local'?'':'display:none'}">
+        <div class="wp-dropzone" id="wpDropzone">
+          <input type="file" id="thLocalFile" accept="image/png,image/jpeg,image/webp,image/avif,image/svg+xml,image/gif" style="display:none"/>
+          <div class="drop-icon">🖼️</div>
+          <div class="drop-title">Choose image from your local computer</div>
+          <div class="drop-hint">Click to browse or drag & drop (PNG, JPG, WebP, AVIF, SVG)</div>
+          <button type="button" class="btn" id="btnBrowseLocal" style="margin-top:10px">Browse Local Image…</button>
+        </div>
+        <div id="wpFileInfo" class="wp-file-info" style="${cfg.wallpaper==='local' && cfg.wallpaperName ? '' : 'display:none'}">
+          <div class="wp-file-meta">
+            <span style="font-size:18px">📁</span>
+            <div style="min-width:0;flex:1">
+              <div id="wpFileName" class="wp-file-name">${escapeHtml(cfg.wallpaperName||'Custom local wallpaper')}</div>
+              <div style="font-size:10.5px;color:var(--dim);margin-top:1px">Saved locally in browser storage (IndexedDB)</div>
+            </div>
+            <span class="wp-file-badge">Active</span>
+          </div>
+          <button type="button" class="btn ghost" id="btnRemoveLocalFile" style="color:var(--red);font-size:11.5px;padding:4px 8px" title="Remove local wallpaper">Remove</button>
+        </div>
+      </div>
+
+      <!-- Curated Presets Panel -->
+      <div id="wpPanelPresets" style="${initialWpType==='presets'?'':'display:none'}">
+        <div class="wp-presets-grid">
+          ${WP_PRESETS.map(p => `
+            <div class="wp-preset-card ${cfg.wallpaper===p.url?'active':''}" style="background-image:url('${p.url}')" data-url="${p.url}" data-name="${p.name}">
+              <span class="label">${p.name}</span>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+
+      <!-- Custom URL Panel -->
+      <div id="wpPanelUrl" style="${initialWpType==='url'?'':'display:none'}">
+        <input type="text" id="thWallpaper" value="${escapeHtml(cfg.wallpaper==='local'?'':cfg.wallpaper||'')}" placeholder="https://images.unsplash.com/... or direct image URL"/>
+        <p class="hint-text" style="font-size:11.5px;margin-top:6px;color:var(--dim)">Paste any public HTTPS image link.</p>
+      </div>
     </div>
     <div class="field">
       <div class="wrow" style="display:flex;justify-content:space-between;align-items:center">
@@ -893,6 +1049,7 @@ function openThemeModal() {
     </div>
   `);
 
+  // Accent color handlers
   const setAccent = (hex) => {
     document.getElementById("thColorHex").value = hex;
     document.getElementById("thColorPick").value = hex;
@@ -913,6 +1070,7 @@ function openThemeModal() {
     if (/^#[0-9a-f]{6}$/i.test(val)) setAccent(val);
   };
 
+  // Base theme handlers
   const setTheme = (mode) => {
     cfg.theme = mode;
     ["thDark","thLight","thAuto"].forEach(id => document.getElementById(id).classList.add("ghost"));
@@ -925,6 +1083,7 @@ function openThemeModal() {
   document.getElementById("thLight").onclick = () => setTheme("light");
   document.getElementById("thAuto").onclick = () => setTheme("auto");
 
+  // Blur and Dim sliders
   document.getElementById("thBlur").oninput = (e) => {
     cfg.wallpaperBlur = parseInt(e.target.value) || 0;
     document.getElementById("thBlurVal").textContent = cfg.wallpaperBlur + "px";
@@ -935,20 +1094,154 @@ function openThemeModal() {
     document.getElementById("thDimVal").textContent = Math.round(cfg.wallpaperDim * 100) + "%";
     applyTheme();
   };
-  document.getElementById("thWallpaper").oninput = (e) => {
-    cfg.wallpaper = e.target.value.trim();
+
+  // Tab switching (Local / Presets / URL)
+  const tabLocal = document.getElementById("tabWpLocal");
+  const tabPresets = document.getElementById("tabWpPresets");
+  const tabUrl = document.getElementById("tabWpUrl");
+  const panelLocal = document.getElementById("wpPanelLocal");
+  const panelPresets = document.getElementById("wpPanelPresets");
+  const panelUrl = document.getElementById("wpPanelUrl");
+
+  function switchWpTab(tab) {
+    [tabLocal, tabPresets, tabUrl].forEach(b => b.classList.remove("active"));
+    panelLocal.style.display = "none";
+    panelPresets.style.display = "none";
+    panelUrl.style.display = "none";
+
+    if (tab === "local") {
+      tabLocal.classList.add("active");
+      panelLocal.style.display = "";
+    } else if (tab === "presets") {
+      tabPresets.classList.add("active");
+      panelPresets.style.display = "";
+    } else if (tab === "url") {
+      tabUrl.classList.add("active");
+      panelUrl.style.display = "";
+    }
+  }
+
+  tabLocal.onclick = () => switchWpTab("local");
+  tabPresets.onclick = () => switchWpTab("presets");
+  tabUrl.onclick = () => switchWpTab("url");
+
+  // Local File Processing
+  const localFileInput = document.getElementById("thLocalFile");
+  const btnBrowseLocal = document.getElementById("btnBrowseLocal");
+  const wpDropzone = document.getElementById("wpDropzone");
+  const wpFileInfo = document.getElementById("wpFileInfo");
+  const wpFileName = document.getElementById("wpFileName");
+  const btnRemoveLocalFile = document.getElementById("btnRemoveLocalFile");
+
+  async function handleLocalImageFile(file) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast("Please select an image file (PNG, JPG, WebP, etc.)");
+      return;
+    }
+    const saved = await saveLocalWallpaper(file);
+    if (saved) {
+      cfg.wallpaper = "local";
+      cfg.wallpaperName = `${file.name} (${formatFileSize(file.size)})`;
+      cfg.wallpaperType = "local";
+      wpFileName.textContent = cfg.wallpaperName;
+      wpFileInfo.style.display = "flex";
+      // Clear preset selection highlights
+      document.querySelectorAll(".wp-preset-card").forEach(c => c.classList.remove("active"));
+      applyTheme();
+      toast("Local wallpaper loaded");
+    } else {
+      toast("Failed to save wallpaper locally");
+    }
+  }
+
+  btnBrowseLocal.onclick = (e) => { e.stopPropagation(); localFileInput.click(); };
+  wpDropzone.onclick = () => localFileInput.click();
+  localFileInput.onchange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleLocalImageFile(e.target.files[0]);
+    }
+  };
+
+  // Drag and drop handlers
+  wpDropzone.ondragover = (e) => { e.preventDefault(); wpDropzone.classList.add("dragover"); };
+  wpDropzone.ondragleave = () => wpDropzone.classList.remove("dragover");
+  wpDropzone.ondrop = (e) => {
+    e.preventDefault();
+    wpDropzone.classList.remove("dragover");
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleLocalImageFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  // Presets selection
+  document.querySelectorAll(".wp-preset-card").forEach(card => {
+    card.onclick = () => {
+      document.querySelectorAll(".wp-preset-card").forEach(c => c.classList.remove("active"));
+      card.classList.add("active");
+      cfg.wallpaper = card.dataset.url;
+      cfg.wallpaperName = card.dataset.name;
+      cfg.wallpaperType = "preset";
+      wpFileInfo.style.display = "none";
+      applyTheme();
+      toast(`Preset "${card.dataset.name}" applied`);
+    };
+  });
+
+  // URL Input
+  const thWallpaperInput = document.getElementById("thWallpaper");
+  thWallpaperInput.oninput = (e) => {
+    const val = e.target.value.trim();
+    if (val) {
+      cfg.wallpaper = val;
+      cfg.wallpaperType = "url";
+      cfg.wallpaperName = "";
+      wpFileInfo.style.display = "none";
+      document.querySelectorAll(".wp-preset-card").forEach(c => c.classList.remove("active"));
+    } else if (cfg.wallpaperType === "url") {
+      cfg.wallpaper = "";
+    }
     applyTheme();
   };
-  document.getElementById("thClearWp").onclick = () => {
+
+  // Remove local file
+  btnRemoveLocalFile.onclick = async () => {
+    await deleteLocalWallpaper();
     cfg.wallpaper = "";
-    document.getElementById("thWallpaper").value = "";
+    cfg.wallpaperName = "";
+    cfg.wallpaperType = "";
+    wpFileInfo.style.display = "none";
     applyTheme();
+    toast("Local wallpaper removed");
   };
+
+  // Remove wallpaper completely
+  document.getElementById("thClearWp").onclick = async () => {
+    await deleteLocalWallpaper();
+    cfg.wallpaper = "";
+    cfg.wallpaperName = "";
+    cfg.wallpaperType = "";
+    thWallpaperInput.value = "";
+    wpFileInfo.style.display = "none";
+    document.querySelectorAll(".wp-preset-card").forEach(c => c.classList.remove("active"));
+    applyTheme();
+    toast("Wallpaper cleared");
+  };
+
+  // Save changes
   document.getElementById("thSave").onclick = () => {
-    cfg.wallpaper = document.getElementById("thWallpaper").value.trim();
+    if (panelUrl.style.display !== "none") {
+      const urlVal = thWallpaperInput.value.trim();
+      if (urlVal) {
+        cfg.wallpaper = urlVal;
+        cfg.wallpaperType = "url";
+      }
+    }
     cfg.wallpaperBlur = parseInt(document.getElementById("thBlur").value) || 0;
     cfg.wallpaperDim = parseFloat(document.getElementById("thDim").value) || 0.4;
-    save(); applyTheme(); closeModal();
+    save();
+    applyTheme();
+    closeModal();
     toast("Appearance saved");
   };
 }

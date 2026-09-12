@@ -1152,6 +1152,105 @@
   .theme-swatch:hover { transform: scale(1.18); }
   .theme-swatch.active { border-color: var(--fg); transform: scale(1.1); }
 
+  /* Wallpaper upload dropzone & presets */
+  .wp-dropzone {
+    border: 2px dashed var(--border-hi);
+    border-radius: var(--radius);
+    padding: 24px 16px;
+    text-align: center;
+    background: var(--panel-hi);
+    cursor: pointer;
+    transition: all .2s var(--ease);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  .wp-dropzone:hover, .wp-dropzone.dragover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--panel-hi));
+  }
+  .wp-dropzone .drop-icon { font-size: 32px; line-height: 1; margin-bottom: 4px; }
+  .wp-dropzone .drop-title { font-size: 13px; font-weight: 600; color: var(--fg); }
+  .wp-dropzone .drop-hint { font-size: 11px; color: var(--dim); margin-top: 2px; }
+
+  .wp-file-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--panel-hi);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-top: 10px;
+  }
+  .wp-file-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+  }
+  .wp-file-name {
+    font-weight: 500;
+    font-size: 12.5px;
+    color: var(--fg);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .wp-file-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    padding: 2px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .wp-presets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .wp-preset-card {
+    height: 74px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    background-size: cover;
+    background-position: center;
+    transition: all .15s var(--ease);
+  }
+  .wp-preset-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    box-shadow: var(--shadow);
+  }
+  .wp-preset-card.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  .wp-preset-card .label {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 4px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    background: linear-gradient(transparent, rgba(0,0,0,.85));
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   /* ============================================================
      BOOKMARKS / SPEED-DIAL WIDGET
      ============================================================ */
