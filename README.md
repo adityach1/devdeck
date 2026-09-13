@@ -110,73 +110,68 @@ Type formulas and quick commands directly into the Omnibar:
 
 ## 🎛️ Widgets System
 
-The widget dashboard automatically organizes your view with zero configuration.
+The widget dashboard automatically organizes your view with zero configuration. Click the **`＋` Add Widget** button in the dashboard header to add any of the **14 modular widgets**:
 
-### Default Widgets
-
-| Widget | Description | Configuration |
+| Widget | Description | Capabilities |
 | :--- | :--- | :--- |
-| **🕐 Clock** | Current local time, date, and timezone. | Configurable timezone & seconds toggle |
-| **☀️ Weather** | Real-time weather and wind speed via Open-Meteo. | **New Delhi** (`28.6896, 77.2947`), metric units |
-| **⭐ Speed Dial** | Visual bookmark tiles with auto-retrieved favicons. | GitHub, Hacker News, YouTube, Reddit, StackOverflow, ChatGPT |
-| **💻 Browser Info** | System diagnostics: Screen resolution, viewport, memory, cores, and network. | Live hardware and connection monitor |
-
-### Available Widget Gallery
-
-Click the **`＋` Add Widget** button in the dashboard header to add any of these modular widgets:
-
-- **🌍 World Clock** — Multi-timezone live display.
-- **🐙 GitHub Activity** — Recent pushes, repositories, and follower stats (supports personal access tokens).
-- **₿ Crypto Prices** — Live CoinGecko price tickers (BTC, ETH, SOL, etc.) in USD, EUR, INR, GBP, or JPY.
-- **📰 Hacker News** — Live top stories with score and comment counts.
-- **📡 RSS Feed** — Custom feed reader (TechCrunch, GitHub releases, engineering blogs).
-- **⏳ Countdown** — Milestone & release countdown timer.
-- **🍅 Pomodoro Focus** — 25/5 interval timer with audio chimes and cycle counters.
-- **📝 Quick Notes** — Instant scratchpad auto-saved independently.
-- **🔌 JSON Endpoint** — Periodic polling and display of custom JSON APIs.
-- **🧩 Custom JS Plugins** — Run sandboxed functions in an isolated iframe.
+| **🕐 Clock** | Precision digital, hybrid, or analog clock. | HH:MM:SS, full date, day of year, ISO week, day progress % bar, timezone chip, epoch chip, ISO 8601 chip. Click any element to copy. |
+| **☀️ Weather** | Enriched telemetry via Open-Meteo (zero API keys). | Current temp with 1-click `°C`/`°F` toggle, daytime/nighttime icon awareness (`is_day`), feels-like temp, rain %, humidity, wind (km/h vs mph), UV index & risk tier, pressure, sunrise/sunset, 3-day forecast strip, city geocoding search & 📍 auto-detect. |
+| **🌍 World Clock** | Multi-timezone live display. | Side-by-side time comparison via `City=IANA_Zone` configuration. |
+| **🐙 GitHub Activity** | Recent pushes, repositories, and follower stats. | Displays public repos, followers, and 4 most recent commits with repo links. Optional PAT support for 5,000 req/hr. |
+| **₿ Crypto Prices** | Live CoinGecko price tickers. | Live crypto prices (BTC, ETH, SOL, etc.) in USD, EUR, INR, GBP, or JPY with 24h change indicators. |
+| **📰 Hacker News** | Real-time feed of top stories. | Top articles with score, comment count, and direct outbound links. |
+| **📡 RSS Feed** | Custom RSS & Atom feed reader. | Follow any public feed (blogs, GitHub releases, news) via CORS proxy. |
+| **⏳ Countdown** | Milestone & release countdown timer. | Days and hours until upcoming deadlines (`Label=YYYY-MM-DD`). |
+| **💻 Browser Info** | System diagnostics. | OS, browser version, screen dimensions, inner viewport, DPR, and connection status. |
+| **🍅 Pomodoro Focus** | Focus & break interval timer. | 25/5 interval timer with audio notification chime powered by shared AudioContext. |
+| **⭐ Speed Dial** | Visual bookmark tiles. | Bookmarks grid with automatic high-resolution favicon resolution and fallback initials. |
+| **🍿 Entertainment** | Media & streaming speed dial. | Direct one-click access to Netflix, Amazon Prime Video, JioHotstar, YouTube, Bilibili, and Dailymotion. |
+| **📝 Quick Notes** | Persistent sticky note. | Mini note area saved independently from the main scratchpad. |
+| **🔌 JSON Endpoint** | REST API field extraction. | Periodic polling of any JSON API with dot-notation field display. |
 
 ---
 
 ## 🛠️ Developer Tool Suite
 
-Access the comprehensive developer suite from the top navigation bar or keyboard shortcuts:
+Access the comprehensive developer suite from the Quick Tools card, Command Palette (`⌘P`), or direct hotkeys:
 
-1. **DNS over HTTPS (DoH) Lookup (`Alt+T` → DNS)**
-   - Query `A`, `AAAA`, `MX`, `TXT`, `CNAME`, `NS`, `SOA`, and `PTR` records via Cloudflare (`1.1.1.1`) or Google (`8.8.8.8`).
-2. **cURL Command Builder (`Alt+T` → cURL)**
-   - Construct cURL requests with custom headers, HTTP methods, authorization tokens, and request bodies.
-3. **Cron Expression Explainer (`Alt+T` → Cron)**
-   - Human-readable cron schedule descriptions and upcoming execution timestamps.
-4. **Cryptographic Key & Token Generator (`Alt+T` → Keygen)**
-   - Cryptographically strong random keys, API tokens, hex strings, Base64 tokens, and passwords with custom lengths and character sets.
-5. **JSON Formatter & Validator**
-   - Format, minify, repair, and validate JSON payloads with color-coded syntax.
-6. **JWT Token Inspector**
-   - Decode headers and payload claims without sending data across the network.
-7. **Hash & HMAC Generator**
-   - Compute SHA-256, SHA-512, and MD5 digests instantly.
-8. **Regex Tester & Visualizer**
-   - Real-time regular expression match testing with flags and capture group highlighting.
-9. **Diff Viewer**
-   - Side-by-side and unified text differences.
-10. **Color Palette & Unit Converter**
-    - Convert HEX, RGB, HSL, and CMYK color spaces.
-11. **REST API Client (`Alt+A`)**
-    - Full HTTP request runner with custom headers, query params, body editors, response headers, and performance metrics.
-12. **Markdown Scratchpad (`Alt+N`)**
-    - Multi-buffer notes manager with live split Markdown preview and interactive task checklist toggles.
-13. **Google Home & Smart Devices Tool (Quick Tools → `Home`)**
-    - Google Account integration (OAuth 2.0 / GIS) with Google Smart Device Management (SDM) API sync for live Nest thermostats, cameras, and devices.
-    - Control smart lights, plugs, thermostats, audio, and locks; adjust brightness and temperature; trigger scenes; dispatch webhooks; and launch Google Home Web (`home.google.com`).
+1. **JSON Formatter & Validator (`⌘J`)** — Format, minify, repair, and validate JSON payloads with syntax error detection.
+2. **Base64 Encoder / Decoder (`⌘B`)** — Two-way UTF-8 text encoding and decoding with automatic direction detection.
+3. **JWT Token Inspector (`⌘U`)** — Decode headers, payload claims, and expiration dates without network transmission.
+4. **Unix Timestamp Converter (`⌘T`)** — Convert timestamps (seconds / ms) to human date-time across all IANA timezones and vice-versa.
+5. **Regex Pattern Tester (`⌘R`)** — Real-time regular expression matching with capture group highlighting and flag toggles.
+6. **UUID Generator** — Generate single or bulk RFC 4122 v4 UUIDs with 1-click clipboard copying.
+7. **Hash & Checksum Generator** — Compute MD5, SHA-1, SHA-256, SHA-384, and SHA-512 digests via Web Crypto.
+8. **URL Encoder & Decoder** — Percent-encode and decode URI strings and query parameters.
+9. **Color Palette & Unit Converter** — Convert HEX, RGB, and HSL color spaces with live swatch and picker.
+10. **cURL Converter** — Construct cURL requests and convert them to JavaScript Fetch or Python Requests snippets.
+11. **Cron Expression Explainer** — Human-readable cron schedule descriptions and upcoming execution timestamps.
+12. **DNS over HTTPS (DoH) Lookup** — Query `A`, `AAAA`, `MX`, `TXT`, `CNAME`, `NS` records via Cloudflare (`1.1.1.1`) or Google (`8.8.8.8`).
+13. **Cryptographic Keygen** — Generate RSA 2048/4096-bit key pairs (PEM), ECDSA keys, AES-256 keys, and high-entropy random tokens.
+14. **REST API Client** — Full HTTP request runner with custom headers, query params, body editors, response headers, and timing.
+15. **Google Home & Smart Devices** — Control smart lights, plugs, thermostats, and locks; adjust brightness; trigger routines; and dispatch webhooks.
+16. **More Tools (JSON ↔ YAML)** — Bi-directional conversion between JSON and YAML data structures.
+
+---
+
+## 📖 In-App User Guide & Manual
+
+DevDeck includes a rich, searchable **User Guide & Manual** right inside the app:
+- Click the **📖** icon in the header actions
+- Click **guide** in the footer
+- Click **Guide** in the Quick Tools grid
+- Press <kbd>?</kbd> or <kbd>F1</kbd> from anywhere on the page
+- Open Command Palette (<kbd>⌘P</kbd>) → select **DevDeck Documentation & Feature Manual**
+
+Features 9 interactive tabs covering the Omnibar, all 14 widgets, 16 quick tools, scratchpad & snippets, ports & infra, vault security, themes & profiles, and a complete keyboard shortcuts cheatsheet.
 
 ---
 
 ## 🔐 Encrypted Secrets Vault
 
-DevDeck includes a built-in developer secrets vault:
+DevDeck includes a zero-knowledge developer secrets vault:
 
-- **Encryption Standard:** `AES-256-GCM` with key derivation using `PBKDF2-SHA256` (100,000 iterations and cryptographically random salt/IV).
+- **Encryption Standard:** `AES-256-GCM` with key derivation using `PBKDF2-SHA256` (**600,000 iterations**, complying with OWASP & NIST 2023 guidelines) and cryptographically random salt/IV.
 - **Memory-Only Session:** Passphrase is kept in runtime memory only while unlocked. Plaintext secrets are never stored to `localStorage` unencrypted.
 - **Structured Manager & Raw Editor:** Manage items with category tags (`API Key`, `Database`, `Auth`, `Server`, `Notes`), expiry dates, and notes, or switch to the raw `.env` / JSON editor.
 - **Auto-Lock Timer:** Configurable inactivity lock (`1m`, `5m`, `10m`, `30m`, `60m`, `Never`).
@@ -187,18 +182,23 @@ DevDeck includes a built-in developer secrets vault:
 
 ## ⌨️ Keyboard Shortcuts
 
-| Shortcut | Action |
-| :--- | :--- |
-| `/` or `Space` | Focus Power Omnibar |
-| `Esc` | Close open modal, panel, or clear Omnibar |
-| `Alt + N` | Open Scratchpad & Notes |
-| `Alt + T` | Open Developer Tools Suite |
-| `Alt + V` | Open Encrypted Secrets Vault |
-| `Alt + A` | Open REST API Client |
-| `Alt + S` | Open Snippets Manager |
-| `Alt + P` | Open Profile Switcher |
-| `Alt + C` | Open Configuration & Settings |
-| `?` | Open Keyboard Cheatsheet |
+| Shortcut | Context | Action |
+| :--- | :--- | :--- |
+| `⌘P` / `Ctrl+P` | Global | Open Command Palette |
+| `⌘K` / `Ctrl+K` | Global | Focus Power Omnibar search box |
+| `?` or `F1` | Global | Open In-App User Guide & Manual |
+| `⌘⇧S` / `Ctrl+Shift+S` | Global | Summon & focus Scratchpad buffer |
+| `/` | Global (not in input) | Focus Snippets fuzzy search filter |
+| `Esc` | Global | Close open modal, dialog, or palette |
+| `⌘J` | Global | Open JSON Formatter & Validator |
+| `⌘B` | Global | Open Base64 Encoder / Decoder |
+| `⌘U` | Global | Open JWT Token Inspector |
+| `⌘T` | Global | Open Unix Timestamp Parser |
+| `⌘R` | Global | Open Regex Pattern Tester |
+| Click Time | Clock Widget | Copy current time to clipboard |
+| Click Date | Clock Widget | Copy full calendar date to clipboard |
+| Click Epoch | Clock Widget | Copy Unix epoch timestamp to clipboard |
+| Click Unit | Weather Widget | Toggle temperature between °C and °F |
 
 ---
 

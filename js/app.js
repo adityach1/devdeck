@@ -3660,7 +3660,7 @@ function openTool(name) {
   ({ json: toolJson, b64: toolB64, jwt: toolJwt, ts: toolTs, regex: toolRegex,
      uuid: toolUuid, hash: toolHash, url: toolUrl, color: toolColor,
      curl: toolCurl, cron: toolCron, dns: toolDns, keygen: toolKeygen,
-     api: toolApi, ghome: toolGoogleHome, more: toolMore })[name]?.();
+     api: toolApi, ghome: toolGoogleHome, more: toolMore, guide: openGuide })[name]?.();
 }
 function toolJson() {
   openModal("JSON Format / Validate", `
@@ -4586,6 +4586,527 @@ function parseScalar(v) {
   if (/^-?\d+$/.test(v)) return Number(v);
   if (/^-?\d+\.\d+$/.test(v)) return Number(v);
   return v.replace(/^["']|["']$/g, "");
+}
+
+/* ============================================================
+   USER GUIDE & MANUAL (BUILT-IN DOCUMENTATION)
+   ============================================================ */
+function openGuide(initialTab = "overview") {
+  const guideData = {
+    overview: `
+      <div class="guide-section">
+        <div class="guide-title">🚀 Welcome to DevDeck</div>
+        <p>
+          DevDeck is a developer-first browser startpage and productivity flight deck. Designed to eliminate context switching,
+          it bundles power search, responsive monitoring widgets, 16 native developer tools, and an encrypted secrets vault into a single, offline-ready tab.
+        </p>
+        <div class="guide-grid">
+          <div class="guide-card">
+            <div class="guide-card-head"><span class="ico">⚡</span>Zero External Dependencies</div>
+            <p>100% pure vanilla JavaScript and native browser APIs (Web Crypto, Intl, Service Workers). No external runtime, framework, or bundler.</p>
+          </div>
+          <div class="guide-card">
+            <div class="guide-card-head"><span class="ico">📴</span>Offline PWA Support</div>
+            <p>All core code and assets are cached locally via Service Worker (<code>sw.js</code>). DevDeck opens and executes instantly without internet access.</p>
+          </div>
+          <div class="guide-card">
+            <div class="guide-card-head"><span class="ico">🔒</span>Zero Telemetry & Private</div>
+            <p>All settings, notes, and secrets live exclusively in your local browser storage. No accounts, tracking, or telemetry whatsoever.</p>
+          </div>
+          <div class="guide-card">
+            <div class="guide-card-head"><span class="ico">⌨️</span>Keyboard-First Flow</div>
+            <p>Everything is accessible from your keyboard: Command Palette (<kbd class="guide-kbd">⌘P</kbd>), Omnibar (<kbd class="guide-kbd">⌘K</kbd>), and tool hotkeys.</p>
+          </div>
+        </div>
+
+        <div class="guide-title" style="margin-top:10px">🗺️ Dashboard Layout Tour</div>
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead><tr><th>Region</th><th>Purpose</th><th>Quick Access</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Header & Switches</strong></td><td>Active profile switcher, search engine toggle, and action buttons</td><td><kbd class="guide-kbd">🎨</kbd> Customize · <kbd class="guide-kbd">＋</kbd> Widgets · <kbd class="guide-kbd">📖</kbd> Guide</td></tr>
+              <tr><td><strong>Power Omnibar</strong></td><td>Omni-search, 25+ bang jumps, inline math calculations, and dev utilities</td><td><kbd class="guide-kbd">⌘K</kbd> or <kbd class="guide-kbd">/</kbd> or <kbd class="guide-kbd">Space</kbd></td></tr>
+              <tr><td><strong>Widgets Grid</strong></td><td>Modular dashboard with clocks, live weather, crypto, RSS, HN, and timers</td><td>Click <kbd class="guide-kbd">⋯</kbd> on any card to configure</td></tr>
+              <tr><td><strong>Quick Tools</strong></td><td>16 instant developer tools (JSON, Base64, JWT, Regex, DNS, Keygen, etc.)</td><td><kbd class="guide-kbd">⌘J</kbd> <kbd class="guide-kbd">⌘B</kbd> <kbd class="guide-kbd">⌘U</kbd> <kbd class="guide-kbd">⌘T</kbd> <kbd class="guide-kbd">⌘R</kbd></td></tr>
+              <tr><td><strong>Scratchpad</strong></td><td>Multi-buffer persistent markdown notes with preview, diff, and snapshots</td><td><kbd class="guide-kbd">⌘⇧S</kbd> to summon from anywhere</td></tr>
+              <tr><td><strong>Ports & Infra</strong></td><td>Local development port scanner and remote service uptime monitors</td><td>Click <em>scan</em> or <em>edit</em></td></tr>
+              <tr><td><strong>Snippets</strong></td><td>Fuzzy-searchable snippet library with tags and instant clipboard copy</td><td>Press <kbd class="guide-kbd">/</kbd> to filter</td></tr>
+              <tr><td><strong>Footer</strong></td><td>Data backup export/import, secrets vault, custom plugins, and reset</td><td>Bottom of page</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `,
+
+    omnibar: `
+      <div class="guide-section">
+        <div class="guide-title">🔍 Power Omnibar & Bang Shortcuts</div>
+        <p>
+          The Omnibar is the command center of DevDeck. It automatically distinguishes between web searches, direct site jumps, mathematical calculations, and quick commands.
+        </p>
+
+        <div class="guide-callout tip">
+          <strong>💡 Omnibar Hotkeys:</strong> Press <kbd class="guide-kbd">⌘K</kbd> or <kbd class="guide-kbd">/</kbd> from anywhere on the page to jump straight into the search box.
+        </div>
+
+        <div class="guide-title" style="margin-top:8px">1. Multi-Engine Search</div>
+        <p>Type any query and press <kbd class="guide-kbd">Enter</kbd> to search with your active engine. Prefix query to override the engine on the fly:</p>
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead><tr><th>Prefix</th><th>Engine</th><th>Example Query</th></tr></thead>
+            <tbody>
+              <tr><td><code>?d</code></td><td>DuckDuckGo</td><td><code>?d rust async channels</code></td></tr>
+              <tr><td><code>?g</code></td><td>Google</td><td><code>?g web components custom elements</code></td></tr>
+              <tr><td><code>?b</code></td><td>Bing</td><td><code>?b typescript 5 features</code></td></tr>
+              <tr><td><code>?br</code></td><td>Brave Search</td><td><code>?br tailwind flex container</code></td></tr>
+              <tr><td><code>?k</code></td><td>Kagi Search</td><td><code>?k postgres full text search</code></td></tr>
+              <tr><td><code>?c</code></td><td>ChatGPT</td><td><code>?c explain event loop in nodejs</code></td></tr>
+              <tr><td><code>?cl</code></td><td>Claude</td><td><code>?cl write a regex for email</code></td></tr>
+              <tr><td><code>?gem</code></td><td>Gemini</td><td><code>?gem compare raft vs paxos</code></td></tr>
+              <tr><td><code>?p</code></td><td>Perplexity</td><td><code>?p latest bun release notes</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="guide-title" style="margin-top:8px">2. Direct Bang Shortcuts (25+ Built-in)</div>
+        <p>Type <code>!bang &lt;query&gt;</code> to jump straight to specific documentation, registries, or services:</p>
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead><tr><th>Bang</th><th>Target Hub</th><th>Query Example</th></tr></thead>
+            <tbody>
+              <tr><td><code>!gh</code></td><td>GitHub Search</td><td><code>!gh react query</code></td></tr>
+              <tr><td><code>!ghr</code></td><td>Direct GitHub Repo</td><td><code>!ghr facebook/react</code></td></tr>
+              <tr><td><code>!mdn</code></td><td>MDN Web Docs</td><td><code>!mdn ResizeObserver</code></td></tr>
+              <tr><td><code>!npm</code></td><td>npm Package Registry</td><td><code>!npm zod</code></td></tr>
+              <tr><td><code>!so</code></td><td>Stack Overflow</td><td><code>!so flexbox sticky footer</code></td></tr>
+              <tr><td><code>!caniuse</code></td><td>Can I Use Feature Table</td><td><code>!caniuse subgrid</code></td></tr>
+              <tr><td><code>!pypi</code></td><td>Python Package Index</td><td><code>!pypi pydantic</code></td></tr>
+              <tr><td><code>!crates</code></td><td>Rust crates.io</td><td><code>!crates tokio</code></td></tr>
+              <tr><td><code>!w</code></td><td>Wikipedia</td><td><code>!w Turing machine</code></td></tr>
+              <tr><td><code>!yt</code></td><td>YouTube Search</td><td><code>!yt lofi beats</code></td></tr>
+              <tr><td><code>!r</code></td><td>Reddit Search</td><td><code>!r programming</code></td></tr>
+              <tr><td><code>!hn</code></td><td>Hacker News (Algolia)</td><td><code>!hn show hn</code></td></tr>
+              <tr><td><code>!devdocs</code></td><td>DevDocs Documentation</td><td><code>!devdocs flexbox</code></td></tr>
+              <tr><td><code>!docker</code></td><td>Docker Hub Images</td><td><code>!docker postgres</code></td></tr>
+              <tr><td><code>!go</code></td><td>Go Package Documentation</td><td><code>!go gin</code></td></tr>
+              <tr><td><code>!aw</code></td><td>ArchWiki</td><td><code>!aw systemd</code></td></tr>
+              <tr><td><code>!maps</code></td><td>Google Maps</td><td><code>!maps tokyo tower</code></td></tr>
+              <tr><td><code>!arxiv</code></td><td>arXiv Research Papers</td><td><code>!arxiv attention is all you need</code></td></tr>
+              <tr><td><code>!ghome</code></td><td>Google Home Web</td><td><code>!ghome</code></td></tr>
+              <tr><td><code>!nflx</code></td><td>Netflix Search</td><td><code>!nflx stranger things</code></td></tr>
+              <tr><td><code>!prime</code></td><td>Amazon Prime Video</td><td><code>!prime fallout</code></td></tr>
+              <tr><td><code>!bili</code></td><td>Bilibili Video</td><td><code>!bili tutorial</code></td></tr>
+              <tr><td><code>!dm</code></td><td>Dailymotion Video</td><td><code>!dm news</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="guide-title" style="margin-top:8px">3. Safe Math & Conversions</div>
+        <p>Type expressions directly in the search bar. The parser executes client-side without dangerous <code>eval()</code>:</p>
+        <div class="guide-grid">
+          <div class="guide-card">
+            <div class="guide-card-head">Arithmetic & Formulas</div>
+            <p><code>42 * 1024</code> → 43,008<br><code>sqrt(256) + 10</code> → 26<br><code>sin(pi/2) * 100</code> → 100</p>
+          </div>
+          <div class="guide-card">
+            <div class="guide-card-head">Currencies & Units</div>
+            <p><code>100 USD in EUR</code><br><code>50 kg in lbs</code><br><code>1024 MB in GB</code></p>
+          </div>
+        </div>
+      </div>
+    `,
+
+    widgets: `
+      <div class="guide-section">
+        <div class="guide-title">🎛️ Widgets Gallery (All 14 Widgets)</div>
+        <p>
+          Click the <kbd class="guide-kbd">＋</kbd> button in the header to open the Widget Gallery.
+          Widgets are fully modular: resize to 2-column wide mode, reconfigure parameters, or remove them at any time via the <kbd class="guide-kbd">⋯</kbd> card menu.
+        </p>
+
+        <div class="guide-grid">
+          <div class="guide-card">
+            <div class="guide-card-head"><span><span class="ico">🕐</span>Clock</span><span class="guide-badge">Live Ticks</span></div>
+            <p>
+              High-precision clock with <strong>Digital, Hybrid, or Analog SVG</strong> styles.
+              Features interactive chips: click time to copy, click date to copy, click epoch chip for Unix timestamp, or click timezone for ISO 8601 string.
+              Includes day progress % bar and 12h/24h AM/PM switcher.
+            </p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-head"><span><span class="ico">☀️</span>Weather</span><span class="guide-badge">Open-Meteo</span></div>
+            <p>
+              Developer-grade weather and atmospheric telemetry without any API keys.
+              Displays temperature with 1-click <code>°C</code>/<code>°F</code> toggle, daytime/nighttime icon awareness (<code>is_day</code>), feels-like temp,
+              rain probability, humidity (💧), wind speed (💨), UV index & risk tier, barometric pressure (⏲️), sunrise/sunset (🌅/🌇), and a <strong>3-day forecast strip</strong>.
+              Includes city search and 📍 Auto browser geolocation.
+            </p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-head"><span><span class="ico">🌍</span>World Clock</span><span class="guide-badge">Timezones</span></div>
+            <p>
+              Side-by-side time comparison across multiple global cities.
+              Configured via standard <code>Label=IANA_Timezone</code> format (e.g. <code>SF=America/Los_Angeles</code>, <code>London=Europe/London</code>).
+            </p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-head"><span><span class="ico">🐙</span>GitHub Activity</span><span class="guide-badge">REST v3</span></div>
+            <p>
+              Displays public profile stats (public repositories, followers) and the 4 most recent public push events with clickable repository links.
+              Supports optional Personal Access Token (PAT) to increase rate limits to 5,000 req/hr.
+            </p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-head"><span><span class="ico">₿</span>Crypto Prices</span><span class="guide-badge">CoinGecko</span></div>
+            <p>
+              Live cryptocurrency prices and 24h delta percentages via CoinGecko.
+              Configure any comma-separated coin IDs (e.g. <code>bitcoin,ethereum,solana</code>) and target currency (<code>usd</code>, <code>eur</code>, <code>gbp</code>, <code>inr</code>, <code>jpy</code>).
+            </p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-head"><span><span class="ico">📰</span>Hacker News</span><span class="guide-badge">Top Stories</span></div>
+            <p>
+              Real-time feed of top Hacker News stories with score, comment count, and direct outbound links. Refreshes periodically with zero authentication required.
+            </p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-head"><span><span class="ico">📡</span>RSS Feed</span><span class="guide-badge">Any Feed</span></div>
+            <p>
+              Follow any public RSS or Atom feed (blogs, GitHub releases, tech portals) via CORS proxy. Configurable feed title and item count (1–20).
+            </p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-head"><span><span class="ico">⏳</span>Countdown</span><span class="guide-badge">Milestones</span></div>
+            <p>
+              Tracks remaining days and hours until your important events, releases, or deadlines using simple <code>Event=YYYY-MM-DD</code> syntax.
+            </p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-head"><span><span class="ico">💻</span>Browser Info</span><span class="guide-badge">Diagnostics</span></div>
+            <p>
+              Live system and client diagnostics: OS, browser version, screen dimensions, inner viewport, Device Pixel Ratio (DPR), connection type, and online status.
+            </p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-head"><span><span class="ico">🍅</span>Pomodoro Focus</span><span class="guide-badge">Audio Chime</span></div>
+            <p>
+              25-minute focus session and 5-minute break timer. Includes an audible chime on phase transitions powered by a shared Web AudioContext singleton.
+            </p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-head"><span><span class="ico">⭐</span>Speed Dial</span><span class="guide-badge">Bookmarks</span></div>
+            <p>
+              Visual grid of your most visited URLs with automatic high-resolution favicon resolution and fallback initials.
+            </p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-head"><span><span class="ico">🍿</span>Entertainment</span><span class="guide-badge">Streaming</span></div>
+            <p>
+              Instant one-click media speed dial for Netflix, Amazon Prime Video, JioHotstar, YouTube, Bilibili, and Dailymotion.
+            </p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-head"><span><span class="ico">📝</span>Quick Notes</span><span class="guide-badge">Sticky</span></div>
+            <p>
+              A persistent quick-scratch sticky note area visible directly in your widget grid, stored independently from the main scratchpad.
+            </p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-head"><span><span class="ico">🔗</span>JSON Endpoint</span><span class="guide-badge">Poll API</span></div>
+            <p>
+              Poll any JSON REST API on a set interval and extract specific deep keys via dot notation to monitor server health, build numbers, or live telemetry.
+            </p>
+          </div>
+        </div>
+      </div>
+    `,
+
+    tools: `
+      <div class="guide-section">
+        <div class="guide-title">🛠️ Developer Quick Tools (16 Native Utilities)</div>
+        <p>
+          DevDeck features 16 zero-dependency developer tools available from the Quick Tools card, command palette (<kbd class="guide-kbd">⌘P</kbd>), or direct keyboard shortcuts.
+        </p>
+
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead><tr><th>Tool</th><th>Shortcut</th><th>Description & Capabilities</th></tr></thead>
+            <tbody>
+              <tr><td><strong>JSON Formatter</strong></td><td><kbd class="guide-kbd">⌘J</kbd></td><td>Format, pretty-print, validate syntax, detect schema errors, and minify JSON strings.</td></tr>
+              <tr><td><strong>Base64</strong></td><td><kbd class="guide-kbd">⌘B</kbd></td><td>Two-way UTF-8 Base64 text encoding and decoding with automatic direction detection and clipboard sync.</td></tr>
+              <tr><td><strong>JWT Decoder</strong></td><td><kbd class="guide-kbd">⌘U</kbd></td><td>Parse JSON Web Tokens into formatted Header, Payload, and Signature JSON with expiration date inspection.</td></tr>
+              <tr><td><strong>Timestamp</strong></td><td><kbd class="guide-kbd">⌘T</kbd></td><td>Convert Unix timestamps (seconds / ms) to human date-time across all IANA timezones and vice versa.</td></tr>
+              <tr><td><strong>Regex Tester</strong></td><td><kbd class="guide-kbd">⌘R</kbd></td><td>Real-time regular expression engine with match count, capture group highlight, and flag toggles (g, i, m).</td></tr>
+              <tr><td><strong>UUID Generator</strong></td><td>—</td><td>Generate single or bulk cryptographic RFC 4122 v4 UUIDs with 1-click clipboard copying.</td></tr>
+              <tr><td><strong>Hash Generator</strong></td><td>—</td><td>Compute cryptographic checksums via Web Crypto API: MD5, SHA-1, SHA-256, SHA-384, SHA-512.</td></tr>
+              <tr><td><strong>URL Encoder</strong></td><td>—</td><td>Encode and decode percent-encoded URI strings and query parameters (<code>encodeURIComponent</code>).</td></tr>
+              <tr><td><strong>Color Converter</strong></td><td>—</td><td>Convert color values between HEX, RGB, and HSL formats with live swatch preview and visual color picker.</td></tr>
+              <tr><td><strong>cURL Converter</strong></td><td>—</td><td>Transform cURL command strings into ready-to-run JavaScript Fetch or Python Requests snippets.</td></tr>
+              <tr><td><strong>Cron Visualizer</strong></td><td>—</td><td>Translate standard 5-part cron syntax into plain English explanations and calculate the next 5 execution times.</td></tr>
+              <tr><td><strong>DNS DoH Lookup</strong></td><td>—</td><td>Query DNS records (A, AAAA, MX, TXT, CNAME, NS) via Cloudflare or Google DNS-over-HTTPS.</td></tr>
+              <tr><td><strong>Keygen</strong></td><td>—</td><td>Generate RSA 2048/4096-bit key pairs (PEM), ECDSA keys, AES-256 keys, and high-entropy random tokens.</td></tr>
+              <tr><td><strong>API Tester</strong></td><td>—</td><td>In-browser REST HTTP client with method selection, custom headers, request bodies, status codes, and timing.</td></tr>
+              <tr><td><strong>Google Home</strong></td><td>—</td><td>Manage smart home devices (lights, plugs, switches), trigger automations and routines, and test webhooks.</td></tr>
+              <tr><td><strong>More (JSON ↔ YAML)</strong></td><td>—</td><td>Bi-directional conversion between JSON and YAML data structures with syntax validation.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `,
+
+    scratch_snip: `
+      <div class="guide-section">
+        <div class="guide-title">📝 Scratchpad & Snippet Library</div>
+
+        <div class="guide-title" style="margin-top:8px">1. Multi-Buffer Scratchpad</div>
+        <p>
+          The Scratchpad is a full-featured markdown and code scratch area located in your main view.
+          Summon it anytime from anywhere with <kbd class="guide-kbd">⌘⇧S</kbd> (or <kbd class="guide-kbd">Ctrl+Shift+S</kbd>).
+        </p>
+        <div class="guide-grid">
+          <div class="guide-card">
+            <div class="guide-card-head">Multi-Buffer Tabs</div>
+            <p>Click <code>+ buffer</code> to create separate scratch tabs (e.g. Todo, Scratch, SQL, Scratchpad). Each buffer is auto-saved independently with timestamps.</p>
+          </div>
+          <div class="guide-card">
+            <div class="guide-card-head">Split Markdown Preview</div>
+            <p>Click <code>preview</code> to render markdown headers, checklists, code blocks, and formatted tables side by side.</p>
+          </div>
+          <div class="guide-card">
+            <div class="guide-card-head">Diff Inspector</div>
+            <p>Click <code>diff</code> to compare differences between any two scratchpad buffers side-by-side with added/deleted line markers.</p>
+          </div>
+          <div class="guide-card">
+            <div class="guide-card-head">Snapshots & Portability</div>
+            <p>Create instant timestamped rollback snapshots via <code>snapshot</code>, or use <code>export</code> and <code>import</code> to save your notes as <code>.md</code> files.</p>
+          </div>
+        </div>
+
+        <div class="guide-title" style="margin-top:14px">2. Snippet Library</div>
+        <p>
+          A searchable snippet repository for frequently used code templates, shell commands, and boilerplates.
+        </p>
+        <div class="guide-callout tip">
+          <strong>⚡ Quick Trigger:</strong> Press <kbd class="guide-kbd">/</kbd> from anywhere on the page to focus the snippet fuzzy filter. Use <kbd class="guide-kbd">↑</kbd> and <kbd class="guide-kbd">↓</kbd> to navigate, and press <kbd class="guide-kbd">Enter</kbd> to copy the snippet to your clipboard.
+        </div>
+        <p>Click <strong>edit</strong> on the Snippets card to add, tag, and organize custom snippets.</p>
+      </div>
+    `,
+
+    ports_infra: `
+      <div class="guide-section">
+        <div class="guide-title">🔌 Local Ports & Infrastructure Monitor</div>
+
+        <div class="guide-title" style="margin-top:8px">1. Local Ports Monitor</div>
+        <p>
+          Keep track of running development servers (Vite, Next.js, Django, Docker, Express) on localhost with automatic non-blocking status probes.
+        </p>
+        <div class="guide-grid">
+          <div class="guide-card">
+            <div class="guide-card-head">🔍 Auto-Scan Detection</div>
+            <p>Click <code>scan</code> to automatically discover ports defined in your workspace project files (<code>package.json</code>, <code>.env</code>, <code>docker-compose.yml</code>, <code>vite.config</code>).</p>
+          </div>
+          <div class="guide-card">
+            <div class="guide-card-head">🏷️ Port Profiles</div>
+            <p>Organize ports into distinct profiles (e.g. <em>Frontend</em>: 3000, 5173; <em>Backend</em>: 8000, 8080; <em>Data</em>: 5432, 6379).</p>
+          </div>
+        </div>
+
+        <div class="guide-title" style="margin-top:14px">2. Infrastructure Health Checks</div>
+        <p>
+          Monitor remote services, staging environments, production APIs, and CDNs directly from your new tab.
+        </p>
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead><tr><th>Status Indicator</th><th>Meaning</th><th>Details</th></tr></thead>
+            <tbody>
+              <tr><td><span style="color:var(--green)">🟢 Online</span></td><td>Healthy</td><td>Target returned a valid 2xx HTTP response code.</td></tr>
+              <tr><td><span style="color:#f59e0b">🟡 Slow</span></td><td>Degraded Latency</td><td>Service responded but round-trip latency exceeded 2000ms.</td></tr>
+              <tr><td><span style="color:var(--red)">🔴 Offline</span></td><td>Unreachable</td><td>Connection timed out or returned a 5xx/4xx server error.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `,
+
+    vault: `
+      <div class="guide-section">
+        <div class="guide-title">🔒 Encrypted Secrets Vault</div>
+        <p>
+          DevDeck features a zero-knowledge, client-side encrypted vault for managing sensitive environment variables, API tokens, and passkeys.
+        </p>
+
+        <div class="guide-callout warn">
+          <strong>⚠️ Master Passphrase Warning:</strong> Encryption occurs strictly in your browser. DevDeck stores no recovery keys or backdoors. If you forget your master passphrase, encrypted secrets cannot be recovered.
+        </div>
+
+        <div class="guide-grid" style="margin-top:8px">
+          <div class="guide-card">
+            <div class="guide-card-head">AES-256-GCM Encryption</div>
+            <p>All values are encrypted using authenticated 256-bit AES-GCM encryption with unique cryptographic initialization vectors (IV) per entry.</p>
+          </div>
+          <div class="guide-card">
+            <div class="guide-card-head">600,000 PBKDF2 Iterations</div>
+            <p>Complies with OWASP & NIST 2023 security guidelines. SHA-256 key stretching makes brute-force attacks computationally impractical.</p>
+          </div>
+          <div class="guide-card">
+            <div class="guide-card-head">In-Memory Key Session</div>
+            <p>Your master key is never saved to localStorage or disk. It is held ephemerally in JavaScript memory and wiped on browser tab close.</p>
+          </div>
+          <div class="guide-card">
+            <div class="guide-card-head">Automatic Idle Auto-Lock</div>
+            <p>The vault automatically purges keys and relocks after 10 minutes of user inactivity (mouse and keyboard activity reset the idle timer).</p>
+          </div>
+        </div>
+      </div>
+    `,
+
+    themes_data: `
+      <div class="guide-section">
+        <div class="guide-title">🎨 Customization, Profiles & Data Backup</div>
+
+        <div class="guide-title" style="margin-top:8px">1. Themes & Wallpaper</div>
+        <p>Click <kbd class="guide-kbd">🎨</kbd> in the top header to customize aesthetics:</p>
+        <ul>
+          <li><strong>Theme Modes:</strong> Dark 🌑, Light ☀️, Sepia 🌅, and Ocean 🌊.</li>
+          <li><strong>Accent Palettes:</strong> Choose from 10 vibrant accent colors (Cyan, Blue, Emerald, Amber, Violet, Rose, etc.).</li>
+          <li><strong>Custom Wallpaper:</strong> Upload an image or provide any wallpaper URL with adjustable blur and brightness sliders.</li>
+        </ul>
+
+        <div class="guide-title" style="margin-top:14px">2. Multi-Profile Workspaces</div>
+        <p>
+          Keep different contexts separated. Create distinct profiles for <strong>Work</strong>, <strong>Personal</strong>, and <strong>Side Projects</strong>.
+          Each profile maintains isolated widgets, bookmarks, snippets, and ports. Switch profiles with 1 click from the header.
+        </p>
+
+        <div class="guide-title" style="margin-top:14px">3. Backup & Migration</div>
+        <div class="guide-grid">
+          <div class="guide-card">
+            <div class="guide-card-head">📥 Export Backup</div>
+            <p>Click <code>export</code> in the footer to download your complete configuration as a portable JSON file.</p>
+          </div>
+          <div class="guide-card">
+            <div class="guide-card-head">📤 Import Restore</div>
+            <p>Click <code>import</code> in the footer to restore or merge saved settings onto another machine or browser.</p>
+          </div>
+        </div>
+      </div>
+    `,
+
+    shortcuts: `
+      <div class="guide-section">
+        <div class="guide-title">⌨️ Complete Keyboard Shortcuts & Cheat Sheet</div>
+        <div class="guide-table-wrap">
+          <table class="guide-table">
+            <thead><tr><th>Shortcut</th><th>Context</th><th>Action Performed</th></tr></thead>
+            <tbody>
+              <tr><td><kbd class="guide-kbd">⌘P</kbd> / <kbd class="guide-kbd">Ctrl+P</kbd></td><td>Global</td><td>Open the fuzzy Command Palette</td></tr>
+              <tr><td><kbd class="guide-kbd">⌘K</kbd> / <kbd class="guide-kbd">Ctrl+K</kbd></td><td>Global</td><td>Focus the Power Omnibar search box</td></tr>
+              <tr><td><kbd class="guide-kbd">?</kbd> or <kbd class="guide-kbd">F1</kbd></td><td>Global</td><td>Open this User Guide & Manual modal</td></tr>
+              <tr><td><kbd class="guide-kbd">⌘⇧S</kbd> / <kbd class="guide-kbd">Ctrl+Shift+S</kbd></td><td>Global</td><td>Summon and focus the Scratchpad buffer</td></tr>
+              <tr><td><kbd class="guide-kbd">/</kbd></td><td>Global (not in input)</td><td>Focus Snippets fuzzy search filter</td></tr>
+              <tr><td><kbd class="guide-kbd">Escape</kbd></td><td>Global</td><td>Close any active dialog, modal, or command palette</td></tr>
+              <tr><td><kbd class="guide-kbd">⌘J</kbd></td><td>Global</td><td>Launch JSON Formatter & Validator tool</td></tr>
+              <tr><td><kbd class="guide-kbd">⌘B</kbd></td><td>Global</td><td>Launch Base64 Encoder / Decoder tool</td></tr>
+              <tr><td><kbd class="guide-kbd">⌘U</kbd></td><td>Global</td><td>Launch JWT Token Inspector tool</td></tr>
+              <tr><td><kbd class="guide-kbd">⌘T</kbd></td><td>Global</td><td>Launch Unix Timestamp Parser tool</td></tr>
+              <tr><td><kbd class="guide-kbd">⌘R</kbd></td><td>Global</td><td>Launch Regex Pattern Tester tool</td></tr>
+              <tr><td><kbd class="guide-kbd">Click Time</kbd></td><td>Clock Widget</td><td>Copy current formatted time to clipboard</td></tr>
+              <tr><td><kbd class="guide-kbd">Click Date</kbd></td><td>Clock Widget</td><td>Copy full calendar date to clipboard</td></tr>
+              <tr><td><kbd class="guide-kbd">Click Epoch</kbd></td><td>Clock Widget</td><td>Copy Unix epoch timestamp to clipboard</td></tr>
+              <tr><td><kbd class="guide-kbd">Click Unit</kbd></td><td>Weather Widget</td><td>Toggle weather between °C and °F</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `
+  };
+
+  const tabsMeta = [
+    { id: "overview", label: "🚀 Overview" },
+    { id: "omnibar", label: "🔍 Omnibar & Bangs" },
+    { id: "widgets", label: "🎛️ Widgets (14)" },
+    { id: "tools", label: "🛠️ Quick Tools (16)" },
+    { id: "scratch_snip", label: "📝 Scratchpad & Snippets" },
+    { id: "ports_infra", label: "🔌 Ports & Infra" },
+    { id: "vault", label: "🔒 Secrets Vault" },
+    { id: "themes_data", label: "🎨 Themes & Backup" },
+    { id: "shortcuts", label: "⌨️ Shortcuts" }
+  ];
+
+  const html = `
+    <div class="guide-container">
+      <div class="guide-header-bar">
+        <div class="guide-header-title">
+          <span>📖</span> DevDeck Documentation & Feature Manual
+        </div>
+        <div class="guide-search-wrap">
+          <span class="ico">🔍</span>
+          <input type="text" id="guideSearch" placeholder="Filter guide topics (e.g. weather, jwt, bangs)..." autocomplete="off" />
+        </div>
+      </div>
+
+      <div class="guide-tabs" id="guideTabsNav">
+        ${tabsMeta.map(t => `<button class="guide-tab-btn ${t.id === initialTab ? "active" : ""}" data-tab="${t.id}">${t.label}</button>`).join("")}
+      </div>
+
+      <div class="guide-body" id="guideBodyContent">
+        ${guideData[initialTab] || guideData.overview}
+      </div>
+    </div>
+  `;
+
+  openModal("DevDeck — User Guide & Manual", html, true);
+
+  // Tab switching logic
+  const tabsNav = document.getElementById("guideTabsNav");
+  const bodyContent = document.getElementById("guideBodyContent");
+  if (tabsNav && bodyContent) {
+    tabsNav.querySelectorAll(".guide-tab-btn").forEach(btn => {
+      btn.onclick = () => {
+        tabsNav.querySelectorAll(".guide-tab-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const tabId = btn.dataset.tab;
+        bodyContent.innerHTML = guideData[tabId] || "";
+        bodyContent.scrollTop = 0;
+        // Trigger live filter if search box has content
+        const q = (document.getElementById("guideSearch")?.value || "").trim().toLowerCase();
+        if (q) applyGuideFilter(q);
+      };
+    });
+  }
+
+  // Live filter search logic
+  function applyGuideFilter(q) {
+    if (!bodyContent) return;
+    const cards = bodyContent.querySelectorAll(".guide-card, .guide-table tbody tr, .guide-section");
+    cards.forEach(el => {
+      if (!q) {
+        el.style.display = "";
+      } else {
+        const txt = el.textContent.toLowerCase();
+        el.style.display = txt.includes(q) ? "" : "none";
+      }
+    });
+  }
+
+  const searchInp = document.getElementById("guideSearch");
+  if (searchInp) {
+    searchInp.oninput = () => applyGuideFilter(searchInp.value.trim().toLowerCase());
+  }
 }
 
 /* ============================================================
@@ -5803,6 +6324,13 @@ function buildCommands() {
   t("API tester", "", () => openTool("api"));
   t("Google Home: smart devices & routines", "", () => openTool("ghome"));
   t("More tools (JSON↔YAML)", "", () => openTool("more"));
+  t("User Guide & Feature Manual", "?", () => openGuide());
+
+  cmds.push({ cat:"help", label:"DevDeck Documentation & Feature Manual", k:"?", run:()=>{ closePalette(); openGuide(); } });
+  cmds.push({ cat:"help", label:"Keyboard shortcuts cheat sheet", k:"?", run:()=>{ closePalette(); openGuide("shortcuts"); } });
+  cmds.push({ cat:"help", label:"Widgets gallery guide (all 14 widgets)", run:()=>{ closePalette(); openGuide("widgets"); } });
+  cmds.push({ cat:"help", label:"Quick Tools manual (all 16 tools)", run:()=>{ closePalette(); openGuide("tools"); } });
+  cmds.push({ cat:"help", label:"Omnibar search, bangs & math manual", run:()=>{ closePalette(); openGuide("omnibar"); } });
 
   cmds.push({ cat:"home", label:"Google Home: manage devices & routines", run:()=>{ closePalette(); toolGoogleHome(); } });
   cmds.push({ cat:"home", label:"Google Home: open web dashboard (home.google.com)", run:()=>{ window.open("https://home.google.com/","_blank"); closePalette(); } });
@@ -5979,6 +6507,8 @@ function importAll() {
 }
 document.getElementById("btnExportAll").onclick = exportAll;
 document.getElementById("btnImportAll").onclick = importAll;
+document.getElementById("btnGuide")?.addEventListener("click", () => openGuide());
+document.getElementById("btnGuideFooter")?.addEventListener("click", () => openGuide());
 document.getElementById("btnReset").onclick = () => {
   if (!confirm("Reset all config to defaults? This cannot be undone.")) return;
   localStorage.removeItem(LS_KEY); location.reload();
@@ -6692,7 +7222,13 @@ document.addEventListener("keydown", (e) => {
   if (k === "r") { e.preventDefault(); openTool("regex"); }
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "/" && !["INPUT","TEXTAREA","SELECT"].includes(document.activeElement?.tagName) && !modal.classList.contains("open")) {
+  const inInput = ["INPUT","TEXTAREA","SELECT"].includes(document.activeElement?.tagName);
+  if ((e.key === "?" || e.key === "F1") && !inInput && !modal.classList.contains("open") && !paletteBackdrop.classList.contains("open")) {
+    e.preventDefault();
+    openGuide();
+    return;
+  }
+  if (e.key === "/" && !inInput && !modal.classList.contains("open")) {
     e.preventDefault(); snipFilterEl.focus();
   }
 });
