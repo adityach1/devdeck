@@ -24,6 +24,26 @@ function getAudioContext() {
   return _sharedAudioCtx;
 }
 
+// Shared clipboard helper with graceful fallback (M6 audit fix)
+async function copyToClipboard(text, label) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(label ? `Copied ${label}` : "Copied!");
+  } catch {
+    // Clipboard API unavailable or permission denied — show selectable fallback
+    const inp = document.createElement("input");
+    inp.value = text;
+    inp.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99999;padding:6px 10px;background:var(--panel-hi,#1e2028);border:1px solid var(--border,#333);color:var(--fg,#fff);font-family:monospace;font-size:13px;border-radius:6px;width:min(320px,90vw)";
+    document.body.appendChild(inp);
+    inp.focus();
+    inp.select();
+    toast("Copy manually (Ctrl+C / ⌘C), then press Escape", 5000);
+    const cleanup = () => { inp.remove(); document.removeEventListener("keydown", cleanup); };
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") cleanup(); });
+    inp.onblur = cleanup;
+  }
+}
+
 /* ============================================================
    WIDGET REGISTRY
    Each widget:
@@ -357,7 +377,7 @@ const WIDGETS = {
         mainEl.onclick = (e) => {
           if (e.target.classList.contains("w-clock-ampm")) return;
           const timeStr = `${data.hh}:${data.mm}${showSecs ? ":" + data.ss : ""}${data.dayPeriod ? " " + data.dayPeriod : ""}`;
-          navigator.clipboard.writeText(timeStr).then(() => toast(`Copied time: ${timeStr}`)).catch(() => {});
+          copyToClipboard(timeStr, `time: ${timeStr}`);
         };
       }
 
@@ -376,9 +396,7 @@ const WIDGETS = {
       // Click date to copy
       const dateEl = clockEl.querySelector(".w-clock-date-row");
       if (dateEl) {
-        dateEl.onclick = () => {
-          navigator.clipboard.writeText(data.fullDate).then(() => toast(`Copied date: ${data.fullDate}`)).catch(() => {});
-        };
+        dateEl.onclick = () => { copyToClipboard(data.fullDate, `date: ${data.fullDate}`); };
       }
 
       // Click style toggle button
@@ -397,17 +415,13 @@ const WIDGETS = {
       // Click epoch chip to copy Unix epoch
       const epochChip = clockEl.querySelector(".w-clock-epoch");
       if (epochChip) {
-        epochChip.onclick = () => {
-          navigator.clipboard.writeText(String(data.epoch)).then(() => toast(`Copied timestamp: ${data.epoch}`)).catch(() => {});
-        };
+        epochChip.onclick = () => { copyToClipboard(String(data.epoch), `timestamp: ${data.epoch}`); };
       }
 
       // Click timezone chip to copy ISO 8601
       const tzChip = clockEl.querySelector(".w-clock-tz-chip");
       if (tzChip) {
-        tzChip.onclick = () => {
-          navigator.clipboard.writeText(data.iso).then(() => toast(`Copied ISO timestamp: ${data.iso}`)).catch(() => {});
-        };
+        tzChip.onclick = () => { copyToClipboard(data.iso, `ISO timestamp: ${data.iso}`); };
       }
     }
   },
@@ -558,21 +572,21 @@ const WIDGETS = {
     },
     readConfig: (el) => ({
       place: el.querySelector('[data-k="place"]').value.trim(),
-      lat: parseFloat(el.querySelector('[data-k="lat"]').value) || 0,
-      lon: parseFloat(el.querySelector('[data-k="lon"]').value) || 0,
+      lat: isNaN(parseFloat(el.querySelector('[data-k="lat"]').value)) ? 28.6895 : parseFloat(el.querySelector('[data-k="lat"]').value),
+      lon: isNaN(parseFloat(el.querySelector('[data-k="lon"]').value)) ? 77.2947 : parseFloat(el.querySelector('[data-k="lon"]').value),
       unit: el.querySelector('[data-k="unit"]').value,
       showForecast: el.querySelector('[data-k="showForecast"]').checked,
       showMetrics: el.querySelector('[data-k="showMetrics"]').checked
     }),
-    render: async (el, c) => {
-      const lat = parseFloat(c.lat) || 28.6895;
-      const lon = parseFloat(c.lon) || 77.2947;
+    render: async (el, c, signal) => {
+      const lat = isNaN(parseFloat(c.lat)) ? 28.6895 : parseFloat(c.lat);
+      const lon = isNaN(parseFloat(c.lon)) ? 77.2947 : parseFloat(c.lon);
       const unit = c.unit === "F" ? "F" : "C";
       const tempUnitParam = unit === "F" ? "fahrenheit" : "celsius";
       const windUnitParam = unit === "F" ? "mph" : "kmh";
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,surface_pressure&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,uv_index_max&temperature_unit=${tempUnitParam}&wind_speed_unit=${windUnitParam}&timezone=auto&forecast_days=4`;
 
-      const r = await fetch(url);
+      const r = await fetch(url, { signal });
       if (!r.ok) throw new Error(`Weather API error (${r.status})`);
       const data = await r.json();
       const cur = data.current;
@@ -705,18 +719,19 @@ const WIDGETS = {
       <input type="text" data-k="user" value="${escapeHtml(c.user||"")}"/></div>
       <div class="wrow"><label style="flex:1">Personal token (optional)</label>
       <input type="password" data-k="token" value="${escapeHtml(c.token||"")}" placeholder="ghp_... (5,000 req/hr)"/></div>
-      <p style="font-size:11px;color:var(--dim);margin-top:6px">Without a token, GitHub limits unauthenticated requests to 60/hour per IP.</p>`,
+      <p style="font-size:11px;color:var(--dim);margin-top:6px">Without a token, GitHub limits unauthenticated requests to 60/hour per IP.</p>
+      <p style="font-size:11px;color:#f59e0b;margin-top:4px">⚠ Token is stored unencrypted in localStorage. Do not use on shared computers.</p>`,
     readConfig: (el) => ({
       user: el.querySelector('[data-k="user"]').value.trim(),
       token: el.querySelector('[data-k="token"]').value.trim()
     }),
-    render: async (el, c) => {
+    render: async (el, c, signal) => {
       const user = c.user;
       if (!user) throw new Error("set a username in config");
       const headers = { "Accept": "application/vnd.github.v3+json" };
       if (c.token) headers["Authorization"] = `Bearer ${c.token}`;
 
-      const uRes = await fetch(`https://api.github.com/users/${encodeURIComponent(user)}`, { headers });
+      const uRes = await fetch(`https://api.github.com/users/${encodeURIComponent(user)}`, { headers, signal });
       if (!uRes.ok) {
         if (uRes.status === 403 || uRes.status === 429) {
           const resetHeader = uRes.headers.get("x-ratelimit-reset");
@@ -734,7 +749,7 @@ const WIDGETS = {
       const user_ = await uRes.json();
       let events = [];
       try {
-        const eRes = await fetch(`https://api.github.com/users/${encodeURIComponent(user)}/events/public?per_page=15`, { headers });
+        const eRes = await fetch(`https://api.github.com/users/${encodeURIComponent(user)}/events/public?per_page=15`, { headers, signal });
         if (eRes.ok) events = await eRes.json();
       } catch {}
 
@@ -770,9 +785,9 @@ const WIDGETS = {
       coins: el.querySelector('[data-k="coins"]').value.split(",").map(x => x.trim()).filter(Boolean),
       currency: el.querySelector('[data-k="currency"]').value
     }),
-    render: async (el, c) => {
+    render: async (el, c, signal) => {
       const url = `https://api.coingecko.com/api/v3/simple/price?ids=${c.coins.join(",")}&vs_currencies=${c.currency}&include_24hr_change=true`;
-      const r = await fetch(url);
+      const r = await fetch(url, { signal });
       if (!r.ok) throw new Error(r.status === 429 ? "rate limited (429)" : `HTTP ${r.status}`);
       const data = await r.json();
       el.innerHTML = `<div class="w-crypto">${c.coins.map(id => {
@@ -802,10 +817,10 @@ const WIDGETS = {
       <div class="wrow"><label style="flex:1">Number of stories</label>
       <input type="text" data-k="count" value="${c.count}"/></div>`,
     readConfig: (el) => ({ count: Math.max(1, Math.min(20, parseInt(el.querySelector('[data-k="count"]').value) || 6)) }),
-    render: async (el, c) => {
-      const r = await fetch("https://hacker-news.firebaseio.com/v0/topstories.json");
+    render: async (el, c, signal) => {
+      const r = await fetch("https://hacker-news.firebaseio.com/v0/topstories.json", { signal });
       const ids = (await r.json()).slice(0, c.count);
-      const items = await Promise.all(ids.map(i => fetch(`https://hacker-news.firebaseio.com/v0/item/${i}.json`).then(x => x.json())));
+      const items = await Promise.all(ids.map(i => fetch(`https://hacker-news.firebaseio.com/v0/item/${i}.json`, { signal }).then(x => x.json())));
       el.innerHTML = `<div class="w-hn">${items.map(i => {
         const safeUrl = i.url && /^https?:\/\//i.test(i.url) ? escapeHtml(i.url) : `https://news.ycombinator.com/item?id=${i.id}`;
         return `
@@ -834,9 +849,9 @@ const WIDGETS = {
       url: el.querySelector('[data-k="url"]').value,
       count: Math.max(1, Math.min(20, parseInt(el.querySelector('[data-k="count"]').value) || 5))
     }),
-    render: async (el, c) => {
+    render: async (el, c, signal) => {
       const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(c.url)}`;
-      const r = await fetch(url);
+      const r = await fetch(url, { signal });
       const data = await r.json();
       if (data.status !== "ok") throw new Error("feed error: " + (data.message || "unknown"));
       const items = (data.items || []).slice(0, c.count);
@@ -1989,7 +2004,7 @@ function renderWidgets() {
         <div class="widget-title"><span class="w-ico">${wIcon}</span>${escapeHtml(wTitle)}</div>
         <button class="widget-menu" aria-label="Options for ${escapeHtml(wTitle)}" data-menu="${w.id}">⋯</button>
       </div>
-      <div class="widget-body loading">loading…</div>
+      <div class="widget-body loading" aria-live="polite" aria-atomic="true">loading…</div>
     `;
     grid.appendChild(card);
 
@@ -2026,7 +2041,7 @@ async function renderWidget(w, body) {
       body.classList.add("loading");
       body.textContent = "loading…";
     }
-    await def.render(body, w.config || {}, () => {
+    await def.render(body, w.config || {}, ctrl.signal, () => {
       save();
     });
     if (ctrl.signal.aborted) return; // stale render — discard
@@ -6012,7 +6027,7 @@ function resetIdleTimer() {
 async function deriveKey(pass, salt) {
   const enc = new TextEncoder();
   const base = await crypto.subtle.importKey("raw", enc.encode(pass), "PBKDF2", false, ["deriveKey"]);
-  return crypto.subtle.deriveKey({ name:"PBKDF2", salt, iterations:200000, hash:"SHA-256" },
+  return crypto.subtle.deriveKey({ name:"PBKDF2", salt, iterations:600000, hash:"SHA-256" },
     base, { name:"AES-GCM", length:256 }, false, ["encrypt","decrypt"]);
 }
 async function vaultEncrypt(pass, plaintext) {
@@ -6160,7 +6175,7 @@ function openVault() {
   const has = !!cfg.vault;
   openModal("Secrets Vault", `
     <p class="hint-text">
-      Zero-knowledge AES-256-GCM encryption with PBKDF2 key derivation (200k iterations).
+      Zero-knowledge AES-256-GCM encryption with PBKDF2 key derivation (600k iterations, OWASP 2023).
       Auto-locks after ${cfg.vaultAutoLockMin !== undefined ? cfg.vaultAutoLockMin : 10} min idle.
     </p>
     <div class="field">
