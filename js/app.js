@@ -272,6 +272,8 @@ const WIDGETS = {
         if (barLbl) barLbl.innerHTML = `<span>day ${data.progressPct}%</span><span>${data.hrsLeft}h ${data.minsLeft}m left</span>`;
         const epEl = root.querySelector(".w-clock-epoch");
         if (epEl) epEl.textContent = "#" + data.epoch;
+        const tzChip = root.querySelector(".w-clock-tz-chip");
+        if (tzChip) tzChip.title = `Click to copy ISO timestamp (${data.iso})`;
 
         // Analog hands
         const hHand = root.querySelector(".clock-hand-h");
@@ -371,12 +373,14 @@ const WIDGETS = {
       const clockEl = el.querySelector(".w-clock");
       if (!clockEl) return;
 
-      // Click time to copy
+      // Click time to copy live time
       const mainEl = clockEl.querySelector(".w-clock-main");
       if (mainEl) {
         mainEl.onclick = (e) => {
           if (e.target.classList.contains("w-clock-ampm")) return;
-          const timeStr = `${data.hh}:${data.mm}${showSecs ? ":" + data.ss : ""}${data.dayPeriod ? " " + data.dayPeriod : ""}`;
+          const live = getClockData(c.tz, c.hour12);
+          const showS = c.showSeconds !== false;
+          const timeStr = `${live.hh}:${live.mm}${showS ? ":" + live.ss : ""}${live.dayPeriod ? " " + live.dayPeriod : ""}`;
           copyToClipboard(timeStr, `time: ${timeStr}`);
         };
       }
@@ -393,10 +397,13 @@ const WIDGETS = {
         };
       }
 
-      // Click date to copy
+      // Click date to copy live calendar date
       const dateEl = clockEl.querySelector(".w-clock-date-row");
       if (dateEl) {
-        dateEl.onclick = () => { copyToClipboard(data.fullDate, `date: ${data.fullDate}`); };
+        dateEl.onclick = () => {
+          const live = getClockData(c.tz, c.hour12);
+          copyToClipboard(live.fullDate, `date: ${live.fullDate}`);
+        };
       }
 
       // Click style toggle button
@@ -412,16 +419,22 @@ const WIDGETS = {
         };
       }
 
-      // Click epoch chip to copy Unix epoch
+      // Click epoch chip to copy live Unix epoch timestamp
       const epochChip = clockEl.querySelector(".w-clock-epoch");
       if (epochChip) {
-        epochChip.onclick = () => { copyToClipboard(String(data.epoch), `timestamp: ${data.epoch}`); };
+        epochChip.onclick = () => {
+          const live = getClockData(c.tz, c.hour12);
+          copyToClipboard(String(live.epoch), `timestamp: ${live.epoch}`);
+        };
       }
 
-      // Click timezone chip to copy ISO 8601
+      // Click timezone chip to copy live ISO 8601 timestamp
       const tzChip = clockEl.querySelector(".w-clock-tz-chip");
       if (tzChip) {
-        tzChip.onclick = () => { copyToClipboard(data.iso, `ISO timestamp: ${data.iso}`); };
+        tzChip.onclick = () => {
+          const live = getClockData(c.tz, c.hour12);
+          copyToClipboard(live.iso, `ISO timestamp: ${live.iso}`);
+        };
       }
     }
   },
