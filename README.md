@@ -31,6 +31,7 @@
 - [Local Development](#-local-development)
 - [Browser New Tab Setup](#-browser-new-tab-setup)
 - [Privacy & Security](#-privacy--security)
+- [Project History & Conversions](history.md)
 - [License](#-license)
 
 ---
